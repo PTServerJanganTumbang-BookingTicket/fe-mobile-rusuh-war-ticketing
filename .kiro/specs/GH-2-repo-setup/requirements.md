@@ -1,4 +1,4 @@
-# Requirements Document — GH-2 Repo Setup
+# Requirements Document
 
 ## Introduction
 
@@ -48,7 +48,7 @@ This ticket establishes the foundational repository setup for the Rusuh Booking 
 
 ---
 
-## Requirements (EARS Format)
+## Requirements
 
 ### R1: Expo SDK 58 Scaffold
 

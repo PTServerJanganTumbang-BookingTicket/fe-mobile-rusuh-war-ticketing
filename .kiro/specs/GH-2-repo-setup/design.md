@@ -413,9 +413,176 @@ jobs:
 
 ---
 
-## Known Risks
+## Architecture
 
-### Risk 1: No Branch Protection (GitHub Free Plan)
+This ticket establishes the foundational architecture — it does not implement feature business logic. The architecture applies to all future feature development.
+
+### Domain Layer
+
+For this setup ticket, domain layer contains only placeholder `.gitkeep` files:
+- `src/core/domain/` — Shared domain models, protocols (empty at setup)
+- `src/features/_example/domain/` — Example feature domain placeholder
+
+**Future features** place business entities, value objects, and pure business rules here. No React, no external dependencies.
+
+### Data Layer
+
+Placeholder structure established:
+- `src/core/data/` — Shared data layer infrastructure (HTTP client, storage adapters)
+- `src/features/_example/data/` — Example feature data placeholder
+
+**Future features** place repositories, API clients, and data mapping here. Can import domain, cannot import presentation.
+
+### Presentation Layer
+
+Minimal working structure:
+- `src/app/_layout.tsx` — Root layout with font loading and global CSS
+- `src/app/index.tsx` — Home screen placeholder
+- `src/core/presentation/` — Shared hooks, utilities
+- `src/features/_example/presentation/` — Example feature presentation placeholder
+
+---
+
+## Components and Interfaces
+
+### Components
+
+| Component | Responsibility | Layer |
+|-----------|----------------|-------|
+| `src/app/_layout.tsx` | Root layout, font loading, global.css import | Presentation |
+| `src/app/index.tsx` | Home screen placeholder | Presentation |
+| `.eslintrc.js` | Lint config with boundary rules | Tooling |
+| `commitlint.config.js` | Commit message validation | Tooling |
+| `.husky/pre-commit` | Block main commits, run lint-staged | Tooling |
+| `.husky/pre-push` | Block main pushes | Tooling |
+| `.husky/commit-msg` | Run commitlint | Tooling |
+| `.github/workflows/ci.yml` | 6-gate CI pipeline | CI/CD |
+
+### Interfaces
+
+```typescript
+// No runtime interfaces for this setup ticket.
+// Architecture interfaces are enforced via ESLint boundaries plugin.
+
+// Example of boundary element types (configured in .eslintrc.js):
+type BoundaryElement =
+  | 'app'
+  | 'core-domain'
+  | 'core-data'
+  | 'core-presentation'
+  | 'feature-domain'
+  | 'feature-data'
+  | 'feature-presentation'
+  | 'feature-public';
+```
+
+---
+
+## Data Models
+
+```typescript
+// No domain data models for this setup ticket.
+// This ticket establishes the folder structure where models will live.
+
+// Example structure for future features (src/features/<feature>/domain/):
+// interface Event { id: string; name: string; date: Date; }
+// interface Ticket { id: string; eventId: string; seatNumber: string; }
+
+// Configuration models used by tooling:
+interface CommitMessage {
+  ticket: string;   // e.g., "2"
+  actor: string;    // e.g., "Rosyid"
+  type: 'feat' | 'fix' | 'chore' | 'docs' | 'refactor' | 'test';
+  scope: string;    // e.g., "auth", "queue", "core"
+  subject: string;  // e.g., "add magic link request"
+}
+```
+
+---
+
+## Correctness Properties
+
+### Property 1: Branch Protection Invariant
+
+**Validates: Requirements 14.1, 15.1**
+
+- Commits directly on `main` branch are blocked by pre-commit hook
+- Pushes to `main` branch are blocked by pre-push hook
+- All changes must go through feature branches and pull requests
+- Enforcement: Git hooks + AGENTS.md constitution + Kiro ASK permissions
+
+### Property 2: Commit Message Format Invariant
+
+**Validates: Requirements 5.1, 13.1**
+
+- Every commit message must match pattern: `[GH-<n>][<Actor>] <type>(<scope>): <desc>`
+- Enforcement: commitlint via commit-msg hook
+- Types restricted to: feat, fix, chore, docs, refactor, test
+
+### Property 3: Layer Dependency Invariant
+
+**Validates: Requirements 4.1, 16.1**
+
+- Domain layer cannot import Data or Presentation
+- Data layer cannot import Presentation
+- Features can only be imported via their public `index.ts` barrel
+- Enforcement: ESLint boundaries plugin + CI boundary-check job
+
+### Property 4: CI Gate Completeness
+
+**Validates: Requirements 17.1, 18.1, 19.1, 20.1, 21.1, 22.1**
+
+- All 6 CI jobs must pass before merge: lint, typecheck, test, expo-doctor, expo-export, boundary-check
+- Enforcement: GitHub Actions workflow (manual enforcement on merge for GitHub Free)
+
+---
+
+## Error Handling
+
+| Error Type | Layer | Handling Strategy | User Feedback |
+|------------|-------|-------------------|---------------|
+| Lint failure | Tooling | Block commit via lint-staged | Terminal error message |
+| Type error | Tooling | Block via typecheck | Terminal error message |
+| Test failure | Tooling | Block via Jest exit code | Terminal test output |
+| Invalid commit message | Tooling | Block via commitlint | Error with expected format |
+| Direct main commit | Tooling | Block via pre-commit hook | Error with branch guidance |
+| Direct main push | Tooling | Block via pre-push hook | Error with PR guidance |
+| CI failure | CI/CD | Block merge (manual check) | GitHub Actions red status |
+| Boundary violation | Tooling | Block via ESLint | Lint error with layer rules |
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+- `__tests__/smoke.test.ts` — Basic smoke test (1 === 1) to verify Jest works
+- `__tests__/App.render.test.tsx` — App component renders without crashing
+- Coverage target: 100% for setup tests (trivial baseline)
+
+### Integration Tests
+
+- Not applicable for this setup ticket
+- Future: Test navigation flows, API integration
+
+### E2E Tests
+
+- Not applicable for this setup ticket
+- Future: Detox or Maestro for critical user flows
+
+### Manual Verification (This Ticket)
+
+1. `npm run lint` — passes with no errors
+2. `npm run typecheck` — passes with no errors
+3. `npm test` — both tests pass
+4. `npx expo start` — app boots in Expo Go
+5. Git hooks fire correctly on commit/push attempts
+6. Commitlint rejects invalid messages
+7. CI workflow passes all 6 gates
+
+---
+
+## Known Risks
 
 **Issue:** Private repo on GitHub Free cannot enforce branch protection rules or rulesets (HTTP 403).
 

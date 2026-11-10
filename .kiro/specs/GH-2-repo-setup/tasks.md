@@ -1,4 +1,4 @@
-# Implementation Tasks — GH-2 Repo Setup
+# Implementation Plan
 
 ## Overview
 
@@ -23,6 +23,26 @@ T9 (commitlint) ──► T10 (pre-commit) ──► T11 (pre-push)
                                                │
                                                ▼
 T12 (CI workflow) ──► T13 (smoke test KiroCrew)
+```
+
+```json
+{
+  "waves": [
+    { "wave": 1, "tasks": ["T1"], "description": "AGENTS.md constitution" },
+    { "wave": 2, "tasks": ["T2a", "T2b", "T2c", "T2d", "T2e", "T2f", "T2g", "T2h"], "description": "Steering files (parallel)" },
+    { "wave": 3, "tasks": ["T3"], "description": "Spec templates" },
+    { "wave": 4, "tasks": ["T4"], "description": "Ticket-to-spec skill" },
+    { "wave": 5, "tasks": ["T5"], "description": "Expo SDK 58 scaffold" },
+    { "wave": 6, "tasks": ["T6"], "description": "ESLint and Prettier" },
+    { "wave": 7, "tasks": ["T7"], "description": "Jest test framework" },
+    { "wave": 8, "tasks": ["T8"], "description": "Boundary lint" },
+    { "wave": 9, "tasks": ["T9"], "description": "Commitlint" },
+    { "wave": 10, "tasks": ["T10"], "description": "Pre-commit hook" },
+    { "wave": 11, "tasks": ["T11"], "description": "Pre-push hook" },
+    { "wave": 12, "tasks": ["T12"], "description": "CI workflow" },
+    { "wave": 13, "tasks": ["T13"], "description": "KiroCrew smoke test (verification only)" }
+  ]
+}
 ```
 
 ---
@@ -505,7 +525,7 @@ T12 (CI workflow) ──► T13 (smoke test KiroCrew)
 
 ---
 
-## Implementation Notes
+## Notes
 
 ### Commit Count
 
