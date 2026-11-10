@@ -1,0 +1,85 @@
+# CI Workflow for fe-mobile-rusuh-war-ticketing
+# Runs on pull requests and pushes to non-main branches
+# 
+# Six merge-quality gates:
+# 1. lint - ESLint checks
+# 2. typecheck - TypeScript type validation
+# 3. test - Jest unit and render tests
+# 4. boundary-check - Clean Architecture boundary validation
+# 5. expo-doctor - Expo SDK compatibility check
+# 6. expo-export - Bundle creation verification
+
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read Node version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gate 1: Lint
+      - name: Run ESLint
+        run: npm run lint
+
+      # Gate 2: Typecheck
+      - name: Run TypeScript check
+        run: npm run typecheck
+
+      # Gate 3: Tests
+      - name: Run tests
+        run: npm test
+
+      # Gate 4: Architecture boundary validation
+      - name: Run boundary check
+        run: npm run boundary-check
+
+      # Gate 5: Expo Doctor
+      - name: Run Expo Doctor
+        run: npx expo-doctor
+
+      # Gate 6: Expo Export (iOS and Android bundles)
+      - name: Run Expo Export (iOS)
+        run: npx expo export --platform ios
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Run Expo Export (Android)
+        run: npx expo export --platform android
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Upload build artifacts (optional)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: expo-export-${{ github.sha }}
+          path: dist/
+          retention-days: 7
