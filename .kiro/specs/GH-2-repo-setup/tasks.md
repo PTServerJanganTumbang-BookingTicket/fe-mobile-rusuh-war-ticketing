@@ -38,7 +38,16 @@ T12 (CI workflow) ──► T13 (smoke test KiroCrew)
 **Files to create:**
 - `AGENTS.md`
 
-**Verification Gate:** T2-11 — File exists with required sections (architecture, commit format, verification commands, steering index)
+**Content requirements:**
+- Architecture and layer rules
+- Git workflow and commit conventions
+- Verification commands
+- Multi-agent isolation rules
+- Security boundaries
+- Steering file index
+- **Rule: Agents must never use `--no-verify` or otherwise bypass git hooks; any bypass requires Rosyid's explicit approval**
+
+**Verification Gate:** T2-11 — File exists with required sections (architecture, commit format, verification commands, steering index); `grep -n 'no-verify' AGENTS.md` returns at least 1 match
 
 **Commit:**
 ```
@@ -529,7 +538,7 @@ Run verification after each task:
 | R2 | T5 | R2-AC1 through R2-AC5 |
 | R3 | T5 | R3-AC1 through R3-AC3 |
 | R4 | T5 | R4-AC1 through R4-AC4 |
-| R5 | T1 | R5-AC1 through R5-AC5 |
+| R5 | T1 | R5-AC1 through R5-AC6 |
 | R6 | T2a-T2h, T13 | R6-AC1 through R6-AC7 |
 | R7 | T3 | R7-AC1 through R7-AC4 |
 | R8 | T4, T13 | R8-AC1 through R8-AC3 |

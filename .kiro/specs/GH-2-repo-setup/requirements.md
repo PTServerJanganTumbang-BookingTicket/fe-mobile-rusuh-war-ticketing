@@ -120,6 +120,7 @@ This ticket establishes the foundational repository setup for the Rusuh Booking 
 - [ ] R5-AC3: Document includes commit message format: `[GH-<n>][Rosyid] <type>(<scope>): <desc>`
 - [ ] R5-AC4: Document includes verification commands: lint, typecheck, test
 - [ ] R5-AC5: Document references steering files, never duplicates their content
+- [ ] R5-AC6: AGENTS.md SHALL forbid agents from using `--no-verify` or otherwise bypassing git hooks; any bypass requires Rosyid's explicit approval
 
 ### R6: Steering Files
 
