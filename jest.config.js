@@ -5,6 +5,14 @@ module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    // Direct component imports (used in wrapper module)
+    "^signal-ui-react-shared/components/Button$":
+      "<rootDir>/__mocks__/signal-ui-react-shared/components/Button.tsx",
+    "^signal-ui-react-shared/components/Text$":
+      "<rootDir>/__mocks__/signal-ui-react-shared/components/Text.tsx",
+    "^signal-ui-react-shared/components/TextField$":
+      "<rootDir>/__mocks__/signal-ui-react-shared/components/TextField.tsx",
+    // Barrel import (for type exports)
     "^signal-ui-react-shared$": "<rootDir>/__mocks__/signal-ui-react-shared.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],

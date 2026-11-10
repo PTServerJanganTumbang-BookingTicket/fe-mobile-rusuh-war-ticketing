@@ -6,8 +6,15 @@
  * source files resolved by Metro, but TypeScript needs these declarations
  * since the library source cannot be directly type-checked (missing dependencies).
  *
+ * We declare both the main module (for type exports) and direct component paths
+ * (for runtime imports) to support the Ticket #3 architecture.
+ *
  * Scope: Button, Text, TextField (per Ticket #3)
  */
+
+// ============================================================================
+// Main Module Declaration (for type exports)
+// ============================================================================
 
 declare module "signal-ui-react-shared" {
   import { ReactNode } from "react";
@@ -18,10 +25,7 @@ declare module "signal-ui-react-shared" {
     KeyboardTypeOptions,
   } from "react-native";
 
-  // ============================================================================
-  // Button Component
-  // ============================================================================
-
+  // Button types
   export type ButtonVariant = "primary" | "secondary" | "tertiary";
   export type ButtonColor =
     "primary" | "secondary" | "valid" | "warning" | "info";
@@ -44,10 +48,7 @@ declare module "signal-ui-react-shared" {
 
   export const Button: React.FC<ButtonProps>;
 
-  // ============================================================================
-  // Text Component
-  // ============================================================================
-
+  // Text types
   export type TextVariant =
     | "h1"
     | "h2"
@@ -88,10 +89,7 @@ declare module "signal-ui-react-shared" {
 
   export const Text: React.FC<TextProps>;
 
-  // ============================================================================
-  // TextField Component
-  // ============================================================================
-
+  // TextField types
   export type TextFieldVariant = "primary" | "secondary";
 
   export interface TextFieldProps {
@@ -134,4 +132,29 @@ declare module "signal-ui-react-shared" {
   }
 
   export const TextField: React.FC<TextFieldProps>;
+}
+
+// ============================================================================
+// Direct Component Path Declarations (for runtime imports)
+// ============================================================================
+
+declare module "signal-ui-react-shared/components/Button" {
+  import type { ButtonProps } from "signal-ui-react-shared";
+  const Button: React.FC<ButtonProps>;
+  export { Button };
+  export default Button;
+}
+
+declare module "signal-ui-react-shared/components/Text" {
+  import type { TextProps } from "signal-ui-react-shared";
+  const Text: React.FC<TextProps>;
+  export { Text };
+  export default Text;
+}
+
+declare module "signal-ui-react-shared/components/TextField" {
+  import type { TextFieldProps } from "signal-ui-react-shared";
+  const TextField: React.FC<TextFieldProps>;
+  export { TextField };
+  export default TextField;
 }
