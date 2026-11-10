@@ -1,6 +1,6 @@
 # CI Workflow for fe-mobile-rusuh-war-ticketing
 # Runs on pull requests and pushes to non-main branches
-# 
+#
 # Six merge-quality gates:
 # 1. lint - ESLint checks
 # 2. typecheck - TypeScript type validation
@@ -27,7 +27,7 @@ jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
