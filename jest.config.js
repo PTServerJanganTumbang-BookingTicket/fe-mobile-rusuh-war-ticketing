@@ -5,6 +5,7 @@ module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^signal-ui-react-shared$": "<rootDir>/__mocks__/signal-ui-react-shared.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   transformIgnorePatterns: [
