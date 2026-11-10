@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Commit-msg hook for fe-mobile-rusuh-war-ticketing
+# Validates commit message format using commitlint
+npx --no -- commitlint --edit "$1"
