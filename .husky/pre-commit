@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Pre-commit hook for fe-mobile-rusuh-war-ticketing
+# Requirements:
+# 1. Block commits on main branch
+# 2. Run lint-staged on staged files
+
+# Get current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Block commits on main branch
+if [ "$BRANCH" = "main" ]; then
+  echo "❌ ERROR: Direct commits to 'main' branch are not allowed."
+  echo ""
+  echo "Please create a feature branch and submit a pull request:"
+  echo "  git checkout -b feature/your-feature-name"
+  echo "  git commit -m 'your message'"
+  echo "  git push -u origin feature/your-feature-name"
+  echo ""
+  exit 1
+fi
+
+# Run lint-staged on staged files
+npx lint-staged
