@@ -1,14 +1,22 @@
-# Requirements — GH-<n> <Title>
+# Requirements Document
 
-## Overview
+## Introduction
 
-<!-- Brief description of the feature or change -->
+<!-- Brief description of the feature or change, its purpose, and context -->
 
----
+## Glossary
 
-## Functional Requirements
+<!-- Define key terms used in this document -->
 
-### R1: <Requirement Name>
+| Term | Definition |
+|------|------------|
+| <!-- Term --> | <!-- Definition --> |
+
+## Requirements
+
+### Functional Requirements
+
+#### R1: <Requirement Name>
 
 **Description:** <!-- What the system must do -->
 
@@ -16,38 +24,32 @@
 - R1-AC1: <!-- Specific, testable criterion -->
 - R1-AC2: <!-- Another criterion -->
 
-### R2: <Requirement Name>
+#### R2: <Requirement Name>
 
 **Description:** <!-- ... -->
 
 **Acceptance Criteria:**
 - R2-AC1: <!-- ... -->
 
----
+### Non-Functional Requirements
 
-## Non-Functional Requirements
-
-### R<n>: Performance
+#### R<n>: Performance
 
 **Description:** <!-- Performance targets -->
 
 **Acceptance Criteria:**
 - R<n>-AC1: <!-- Measurable target -->
 
-### R<n>: Security
+#### R<n>: Security
 
 **Description:** <!-- Security requirements -->
 
 **Acceptance Criteria:**
 - R<n>-AC1: <!-- Specific security check -->
 
----
-
 ## Constraints
 
 <!-- Technical or business constraints that limit implementation choices -->
-
----
 
 ## Out of Scope
 

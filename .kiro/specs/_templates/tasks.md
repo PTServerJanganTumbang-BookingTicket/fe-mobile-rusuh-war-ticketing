@@ -1,7 +1,7 @@
-# Implementation Tasks — GH-<n> <Title>
+# Implementation Plan
 
 ## Overview
-
+a
 <!-- Brief description of implementation approach -->
 
 **Rule: One task = one commit.**
@@ -13,6 +13,16 @@
 ```
 <!-- ASCII diagram showing task dependencies -->
 T1 ──► T2 ──► T3
+```
+
+```json
+{
+  "waves": [
+    { "wave": 1, "tasks": ["T1"] },
+    { "wave": 2, "tasks": ["T2"] },
+    { "wave": 3, "tasks": ["T3"] }
+  ]
+}
 ```
 
 ---
@@ -64,6 +74,6 @@ T1 ──► T2 ──► T3
 
 ---
 
-## Implementation Notes
+## Notes
 
 <!-- Any additional guidance for implementation -->
