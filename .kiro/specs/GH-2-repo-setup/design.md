@@ -33,6 +33,13 @@ fe-mobile-rusuh-war-ticketing/
 │   │       ├── design.md
 │   │       └── tasks.md
 │   └── steering/
+│       ├── product.md                # inclusion: always — product context
+│       ├── tech.md                   # inclusion: always — tech stack
+│       ├── structure.md              # inclusion: always — folder structure
+│       ├── git-workflow.md           # inclusion: always — branch/commit rules
+│       ├── spec-workflow.md          # inclusion: always — spec process
+│       ├── architecture-boundaries.md # inclusion: fileMatch "src/**"
+│       ├── testing-tdd.md            # inclusion: fileMatch "**/*.test.{ts,tsx}", "__tests__/**"
 │       └── release-train.md          # inclusion: manual
 ├── __tests__/
 │   ├── smoke.test.ts                 # Basic smoke test
@@ -79,9 +86,17 @@ fe-mobile-rusuh-war-ticketing/
 
 | File | Inclusion Mode | Est. Tokens | Purpose |
 |------|---------------|-------------|---------|
+| `product.md` | always | ~200 | Product context: Rusuh Booking Tiket mobile app |
+| `tech.md` | always | ~300 | Tech stack: Expo SDK 58, Nativewind, TypeScript |
+| `structure.md` | always | ~400 | Folder structure: Clean Architecture feature-first |
+| `git-workflow.md` | always | ~350 | Branch naming, commit format, PR rules |
+| `spec-workflow.md` | always | ~250 | Spec creation process, references templates |
+| `architecture-boundaries.md` | fileMatch `src/**` | ~400 | Layer rules, boundary enforcement (loads when editing src/) |
+| `testing-tdd.md` | fileMatch `**/*.test.{ts,tsx}`, `__tests__/**` | ~300 | Testing patterns, TDD workflow (loads for test files) |
 | `release-train.md` | manual | ~400 | Release process, hotfix rules, mergeback |
-| **Total always-on** | — | **0** | No auto-inclusion files in this ticket |
-| **Total manual** | — | ~400 | Under 2,000 token budget |
+| **Total always-on** | — | **~1,500** | Under 2,000 token budget ✓ |
+| **Total fileMatch** | — | ~700 | Loads conditionally |
+| **Total manual** | — | ~400 | On-demand only |
 
 ---
 
@@ -198,6 +213,15 @@ npx --no -- commitlint --edit ${1}
 # .husky/pre-commit
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
+
+# Block commits on main branch
+current_branch=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
+if [ "$current_branch" = "main" ]; then
+  echo "❌ Commits directly on main are not allowed."
+  echo "   Create a branch first: git switch -c story/GH-<n>-<slug>"
+  exit 1
+fi
+
 npx lint-staged
 ```
 
@@ -399,9 +423,10 @@ jobs:
 1. AGENTS.md explicitly prohibits direct push to main
 2. Kiro ASK permissions require approval for `git push`
 3. Pre-push hook blocks `refs/heads/main` pushes
-4. Rosyid manually merges every PR after green CI
+4. Pre-commit hook also blocks commits when branch is main
+5. Rosyid manually merges every PR after green CI
 
-**Residual Risk:** Developer with push access can bypass hook with `--no-verify`. Acceptable for single-developer project.
+**Residual Risk:** Developer with push access could bypass hooks with `--no-verify`, but agents are explicitly forbidden from using `--no-verify` — bypassing any hook requires Rosyid's explicit approval. Acceptable for single-developer project with this rule.
 
 ### Risk 2: KiroCrew Skill Loading
 

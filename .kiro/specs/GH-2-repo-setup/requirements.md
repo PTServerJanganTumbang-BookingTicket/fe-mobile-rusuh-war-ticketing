@@ -129,9 +129,12 @@ This ticket establishes the foundational repository setup for the Rusuh Booking 
 
 **Acceptance Criteria:**
 - [ ] R6-AC1: `.kiro/steering/` directory exists
-- [ ] R6-AC2: `release-train.md` exists with `inclusion: manual`
-- [ ] R6-AC3: Release-train steering covers: release/X.Y.Z from main, FT/NFT/Security gates, tagging, mergeback, hotfix from release/* not main, rollback procedure, cherry-pick conflict resolution
-- [ ] R6-AC4: Always-on steering files stay under 2,000 tokens combined
+- [ ] R6-AC2: Always-on files exist: `product.md`, `tech.md`, `structure.md`, `git-workflow.md`, `spec-workflow.md`
+- [ ] R6-AC3: fileMatch files exist: `architecture-boundaries.md` (src/**), `testing-tdd.md` (test files)
+- [ ] R6-AC4: `release-train.md` exists with `inclusion: manual`
+- [ ] R6-AC5: Release-train steering covers: release/X.Y.Z from main, FT/NFT/Security gates, tagging, mergeback, hotfix from release/* not main, rollback procedure, cherry-pick conflict resolution
+- [ ] R6-AC6: Always-on steering files stay under 2,000 tokens combined
+- [ ] R6-AC7: Steering files reference AGENTS.md, never duplicate its content
 
 ### R7: Spec Templates
 
@@ -217,13 +220,14 @@ This ticket establishes the foundational repository setup for the Rusuh Booking 
 ### R14: Pre-commit Hook
 
 **WHEN** a developer stages files and runs `git commit`,  
-**THE** system **SHALL** run lint-staged to check staged files,  
-**SO THAT** only clean code is committed.
+**THE** system **SHALL** first block if on main branch, then run lint-staged to check staged files,  
+**SO THAT** commits on main are prevented and only clean code is committed on branches.
 
 **Acceptance Criteria:**
 - [ ] R14-AC1: `husky` or `simple-git-hooks` is installed
 - [ ] R14-AC2: `lint-staged` is configured for `.ts`, `.tsx` files
 - [ ] R14-AC3: Pre-commit hook runs ESLint and Prettier on staged files
+- [ ] R14-AC4: Pre-commit hook blocks commits when branch is main
 
 ### R15: Pre-push Hook (Main Branch Protection)
 
@@ -345,9 +349,10 @@ This ticket establishes the foundational repository setup for the Rusuh Booking 
 | T2-13 | Hook | Pre-commit configured | Stage bad file, commit | Hook rejects or fixes | Yes |
 | T2-14 | Hook | Pre-push configured | Push to main | Push rejected | Yes |
 | T2-15 | Hook | Commitlint configured | Invalid commit message | Commit rejected | Yes |
-| T2-16 | Steering | .kiro/steering/ exists | Check directory | Files present | Yes |
+| T2-16 | Steering | .kiro/steering/ exists | Check directory | All 8 files present with correct modes | Yes |
 | T2-17 | Skill | .kiro/skills/ticket-to-spec/ | Check directory | SKILL.md present | Yes |
-| T2-18 | Smoke | KiroCrew session in repo | Load steering and skill | Steering loads, skill discoverable | Yes |
+| T2-18 | Smoke | KiroCrew session in repo | Load steering, discover skill, edit src/ file | Always-on steering loads, skill discoverable, architecture-boundaries.md loads on src/ edit | Yes |
+| T2-19 | Hook | Pre-commit on main | Switch to main, stage file, commit | Commit blocked before lint-staged runs | Yes |
 
 ---
 
