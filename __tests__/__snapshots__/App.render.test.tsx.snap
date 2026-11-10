@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`App Render Test verifies snapshot matches expected output 1`] = `
+<View
+  testID="test-container"
+>
+  <Text>
+    Rusuh Booking Tiket
+  </Text>
+  <Text>
+    Welcome to the mobile app
+  </Text>
+</View>
+`;

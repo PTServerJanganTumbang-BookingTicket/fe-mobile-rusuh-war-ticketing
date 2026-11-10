@@ -1,0 +1,97 @@
+# CI Workflow for fe-mobile-rusuh-war-ticketing
+# Runs on pull requests and pushes to non-main branches
+#
+# Six merge-quality gates (sequential, single job):
+# 1. lint - ESLint checks
+# 2. typecheck - TypeScript type validation
+# 3. test - Jest unit and render tests
+# 4. boundary-check - Clean Architecture boundary validation
+# 5. expo-doctor - Expo SDK compatibility check
+# 6. expo-export - Bundle creation verification (iOS + Android)
+#
+# Targets dedicated repository-level self-hosted runner (sumopod-rusuh-mobile-01)
+# Runner is isolated under Linux user gha-runner with no sudo access.
+# Sequential execution required due to 3.6 GiB RAM constraint.
+
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: [self-hosted, linux, x64, rusuh-mobile]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Node.js version
+        run: |
+          EXPECTED_NODE=$(cat .nvmrc)
+          ACTUAL_NODE=$(node --version | sed 's/^v//')
+          echo "Expected Node: $EXPECTED_NODE"
+          echo "Actual Node: $ACTUAL_NODE"
+          if [ "$ACTUAL_NODE" != "$EXPECTED_NODE" ]; then
+            echo "::error::Node version mismatch. Expected $EXPECTED_NODE, got $ACTUAL_NODE"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gate 1: Lint
+      - name: "Gate 1: Lint"
+        run: npm run lint
+
+      # Gate 2: Typecheck
+      - name: "Gate 2: Typecheck"
+        run: npm run typecheck
+
+      # Gate 3: Tests
+      - name: "Gate 3: Test"
+        run: npm test
+
+      # Gate 4: Architecture boundary validation
+      - name: "Gate 4: Boundary Check"
+        run: npm run boundary-check
+
+      # Gate 5: Expo Doctor
+      - name: "Gate 5: Expo Doctor"
+        run: npx expo-doctor
+
+      # Gate 6: Expo Export (iOS and Android bundles, sequential)
+      - name: "Gate 6a: Expo Export (iOS)"
+        run: npx expo export --platform ios
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Clean iOS export artifacts
+        run: rm -rf dist/
+
+      - name: "Gate 6b: Expo Export (Android)"
+        run: npx expo export --platform android
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Clean Android export artifacts
+        run: rm -rf dist/
+
+      # Verify clean worktree (no generated files left behind)
+      - name: Verify clean worktree
+        run: |
+          git diff --check || true
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::warning::Worktree has uncommitted changes after CI"
+            git status --short
+          fi

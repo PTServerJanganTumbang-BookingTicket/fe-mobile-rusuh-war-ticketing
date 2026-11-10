@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Pre-push hook for fe-mobile-rusuh-war-ticketing
+# Blocks direct pushes to main branch
+
+# Read the remote and URL
+remote="$1"
+url="$2"
+
+# Check each ref being pushed
+while read local_ref local_sha remote_ref remote_sha
+do
+  # Check if pushing to main
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "❌ ERROR: Direct pushes to 'main' branch are not allowed."
+    echo ""
+    echo "Please create a pull request instead:"
+    echo "  1. Push your changes to a feature branch"
+    echo "  2. Create a PR on GitHub"
+    echo "  3. Get the PR reviewed and merged"
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
