@@ -8,7 +8,77 @@ Integrate signal-ui-react-shared via Metro custom resolver. Configure TypeScript
 
 ---
 
-## Task Summary Table
+## Task Dependency Graph
+
+```
+T1 (Metro resolver)
+ ├──> T2 (TypeScript declarations)
+ │     └──> T3 (Signal UI wrapper)
+ │           ├──> T4 (Button tests)
+ │           └──> T5 (Text/TextField tests)
+ └──> T7 (A1 Metro css-interop fix)
+       └──> T8 (A3-min Gluestack deps)
+
+T6 (Jest mock) ──> T4, T5 (enables render tests)
+
+T9 (Spec reconciliation) ──> T1-T8 (documents all)
+```
+
+```json
+{
+  "waves": [
+    {
+      "wave": 1,
+      "tasks": ["T1", "T6"],
+      "description": "Foundation: Metro resolver and Jest mock (parallel, no dependencies)"
+    },
+    {
+      "wave": 2,
+      "tasks": ["T2", "T7"],
+      "description": "TypeScript declarations (depends on T1) and Metro css-interop fix (depends on T1)"
+    },
+    {
+      "wave": 3,
+      "tasks": ["T3", "T8"],
+      "description": "Signal UI wrapper (depends on T2) and Gluestack deps (depends on T7)"
+    },
+    {
+      "wave": 4,
+      "tasks": ["T4", "T5"],
+      "description": "Component tests (depend on T3 and T6)"
+    },
+    {
+      "wave": 5,
+      "tasks": ["T9"],
+      "description": "Spec reconciliation (depends on T1-T8)"
+    }
+  ],
+  "dependencies": {
+    "T1": [],
+    "T2": ["T1"],
+    "T3": ["T2"],
+    "T4": ["T3", "T6"],
+    "T5": ["T3", "T6"],
+    "T6": [],
+    "T7": ["T1"],
+    "T8": ["T7"],
+    "T9": ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8"]
+  }
+}
+```
+
+**Legend:**
+
+- T1-T3: Core integration (Metro → TypeScript → Wrapper)
+- T4-T6: Testing infrastructure
+- T7-T8: Bounded repairs discovered during integration
+- T9: Documentation reconciliation
+
+---
+
+## Tasks
+
+### Task Summary Table
 
 | Task | R-IDs       | Status  | Files                                            | Commit                                                    |
 | ---- | ----------- | ------- | ------------------------------------------------ | --------------------------------------------------------- |
@@ -200,3 +270,15 @@ Updated spec files to reflect actual implementation:
 ### T3-06 Button Raw String Warning
 
 **Status:** UNVERIFIED — Requires actual runtime observation in Expo Go which is not available in this environment. Bundle success does not prove warning absence.
+
+---
+
+## Notes
+
+1. **Declaration file approach:** Chosen over tsconfig paths because signal-ui source files have transitive dependencies that don't exist in the app's node_modules.
+
+2. **Bounded repairs:** Two repairs (A1, A3-min) were required during implementation and documented in design.md as accepted deviations.
+
+3. **Button loading criterion:** R3-AC3 was removed as the upstream Button API has no `loading` prop — this is a spec correction, not scope reduction.
+
+4. **expo-doctor exception:** 18/20 result with exit code 1 was granted a narrow human-adjudicated exception for @types/react-native peer metadata containment.

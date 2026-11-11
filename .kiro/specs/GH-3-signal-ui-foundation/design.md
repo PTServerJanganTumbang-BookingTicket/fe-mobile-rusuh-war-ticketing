@@ -326,27 +326,35 @@ declare module "signal-ui-react-shared/components/TextField" {
 
 ## Correctness Properties
 
-### P1: Single Runtime Instance
+### Property 1: Single Runtime Instance
 
-**Property:** Only one instance of React, React Native, and react-native-css-interop exists in the bundle.
+**Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+
+Only one instance of React, React Native, and react-native-css-interop exists in the bundle.
 
 **Verification:** `npm ls react react-native react-native-css-interop` returns exactly one resolved path per package.
 
-### P2: Metro Resolution Completeness
+### Property 2: Metro Resolution Completeness
 
-**Property:** All imports from `signal-ui-react-shared/*` resolve to valid source files at bundle time.
+**Validates: Requirements 1.1, 1.2, 1.3, 1.4**
+
+All imports from `signal-ui-react-shared/*` resolve to valid source files at bundle time.
 
 **Verification:** Metro bundler completes without "Unable to resolve module" errors.
 
-### P3: TypeScript Type Coverage
+### Property 3: TypeScript Type Coverage
 
-**Property:** All re-exported components have type definitions that match their runtime behavior.
+**Validates: Requirements 2.1, 2.2, 7.1**
+
+All re-exported components have type definitions that match their runtime behavior.
 
 **Verification:** `npm run typecheck` passes with no errors on files importing from `@/core/presentation/components/signal`.
 
-### P4: Clean Architecture Boundary
+### Property 4: Clean Architecture Boundary
 
-**Property:** No feature or app layer code imports directly from `signal-ui-react-shared`; all access goes through `@/core/presentation/components/signal`.
+**Validates: Requirements 8.4**
+
+No feature or app layer code imports directly from `signal-ui-react-shared`; all access goes through `@/core/presentation/components/signal`.
 
 **Verification:** `grep -r "from ['\"]signal-ui-react-shared" src/` returns only hits in `src/core/presentation/components/signal/` and `src/signal-ui-react-shared.d.ts`.
 
