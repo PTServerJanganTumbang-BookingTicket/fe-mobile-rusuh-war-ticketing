@@ -53,13 +53,15 @@ jobs:
           path: fe-mobile-rusuh-war-ticketing
 
       # Checkout signal-ui-react-shared as sibling at pinned SHA
-      # GITHUB_TOKEN has read access to same-org private repos by default
+      # Uses dedicated read-only token for cross-repo private access
       - name: Checkout signal-ui-react-shared (pinned)
         uses: actions/checkout@v4
         with:
           repository: PTServerJanganTumbang-BookingTicket/signal-ui-react-shared
           ref: dcc2f73a59cad7a5eb63265c110f518ed6a185b7
           path: signal-ui-react-shared
+          token: ${{ secrets.SIGNAL_UI_READ_TOKEN }}
+          persist-credentials: false
 
       - name: Verify sibling layout
         working-directory: ${{ github.workspace }}
