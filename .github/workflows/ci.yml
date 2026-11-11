@@ -66,9 +66,122 @@ jobs:
       - name: "Gate 4: Boundary Check"
         run: npm run boundary-check
 
-      # Gate 5: Expo Doctor
+      # Gate 5: Expo Doctor (with GH-3 adjudicated exception handling)
+      # Runs expo install --check and pinned expo-doctor@1.13.0
+      # Permits continuation ONLY for the exact GH-3 adjudicated finding set.
+      # Any new or different finding fails CI.
       - name: "Gate 5: Expo Doctor"
-        run: npx expo-doctor
+        id: expo-doctor
+        run: |
+          set -e
+          
+          echo "=== Expo SDK Compatibility Check ==="
+          echo ""
+          
+          # Step 1: Run Expo's authoritative SDK compatibility check
+          echo "Running: npx expo install --check"
+          set +e
+          EXPO_CHECK_OUTPUT=$(npx expo install --check 2>&1)
+          EXPO_CHECK_EXIT=$?
+          set -e
+          echo "$EXPO_CHECK_OUTPUT"
+          
+          # Require exit 0 AND "Dependencies are up to date"
+          if [ $EXPO_CHECK_EXIT -ne 0 ]; then
+            echo "::error::expo install --check exited with code $EXPO_CHECK_EXIT"
+            exit 1
+          fi
+          
+          if ! echo "$EXPO_CHECK_OUTPUT" | grep -q "Dependencies are up to date"; then
+            echo "::error::expo install --check did not report 'Dependencies are up to date'"
+            exit 1
+          fi
+          echo ""
+          echo "✅ expo install --check: exit 0, Dependencies are up to date"
+          echo ""
+          
+          # Step 2: Run pinned expo-doctor and capture output
+          echo "Running: npx expo-doctor@1.13.0"
+          set +e
+          DOCTOR_OUTPUT=$(npx expo-doctor@1.13.0 2>&1)
+          DOCTOR_EXIT=$?
+          set -e
+          
+          # Always save output for artifact
+          echo "$DOCTOR_OUTPUT" > expo-doctor-output.txt
+          echo "$DOCTOR_OUTPUT"
+          
+          # Step 3: If expo-doctor passed (exit 0), report PASS
+          if [ $DOCTOR_EXIT -eq 0 ]; then
+            echo ""
+            echo "✅ Gate 5: Expo Doctor - PASS"
+            exit 0
+          fi
+          
+          # Step 4: Check for GH-3 adjudicated exception set
+          echo ""
+          echo "=== Checking against GH-3 adjudicated exception set ==="
+          
+          MATCHED_FINDINGS=0
+          
+          # Finding 1: @types/react-native direct-install (GH-3/Gluestack compatibility debt)
+          if echo "$DOCTOR_OUTPUT" | grep -q '@types/react-native.*should not be installed directly'; then
+            echo "✓ Finding 1: @types/react-native direct-install"
+            echo "  Classification: KNOWN GH-3 / GLUESTACK COMPATIBILITY DEBT"
+            MATCHED_FINDINGS=$((MATCHED_FINDINGS + 1))
+          fi
+          
+          # Finding 2: Metro version mismatch (expo-doctor@1.13.0 expects ^0.84.6, SDK 58 uses 0.87.x)
+          if echo "$DOCTOR_OUTPUT" | grep -q 'Expected package metro@\^0.84.6' && \
+             echo "$DOCTOR_OUTPUT" | grep -q 'metro@0\.87'; then
+            echo "✓ Finding 2: Metro ^0.84.6 expected vs 0.87.x installed"
+            echo "  Classification: EXPO-DOCTOR VERSION/CHECK-SET ARTIFACT"
+            MATCHED_FINDINGS=$((MATCHED_FINDINGS + 1))
+          fi
+          
+          # Finding 3: @gluestack-ui/themed RN Directory metadata warning
+          if echo "$DOCTOR_OUTPUT" | grep -q 'No metadata available: @gluestack-ui/themed'; then
+            echo "✓ Finding 3: @gluestack-ui/themed missing RN Directory metadata"
+            echo "  Classification: THIRD-PARTY METADATA WARNING"
+            MATCHED_FINDINGS=$((MATCHED_FINDINGS + 1))
+          fi
+          
+          # Extract failure count from output
+          FAILURE_COUNT=$(echo "$DOCTOR_OUTPUT" | grep -oE '[0-9]+ checks? failed' | grep -oE '^[0-9]+' | head -1)
+          FAILURE_COUNT=${FAILURE_COUNT:-0}
+          
+          echo ""
+          echo "Adjudicated findings expected: 3"
+          echo "Adjudicated findings matched:  $MATCHED_FINDINGS"
+          echo "Expo-doctor reported failures: $FAILURE_COUNT"
+          
+          # Step 5: Accept ONLY exact match of all 3 findings with exactly 3 failures
+          if [ "$MATCHED_FINDINGS" -eq 3 ] && [ "$FAILURE_COUNT" -eq 3 ]; then
+            echo ""
+            echo "⚠️ Gate 5: Expo Doctor - ACCEPTED GH-3 TOOLCHAIN/COMPATIBILITY EXCEPTION -- HUMAN ADJUDICATED"
+            echo ""
+            echo "All findings match the narrowly-scoped GH-3 adjudicated exception set."
+            echo "expo install --check confirmed: Dependencies are up to date"
+            echo "No new or different findings detected."
+            exit 0
+          else
+            echo ""
+            echo "::error::Expo-doctor findings do not match the adjudicated exception set"
+            echo "Expected exactly 3 adjudicated findings, matched $MATCHED_FINDINGS, doctor reported $FAILURE_COUNT failures"
+            echo "This may indicate new dependency issues, resolved issues, or changed findings."
+            echo "Human review required before this can be accepted."
+            exit 1
+          fi
+
+      # Upload expo-doctor output as artifact for audit trail
+      - name: Upload Expo Doctor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-doctor-gh3-evidence
+          path: expo-doctor-output.txt
+          if-no-files-found: ignore
+          retention-days: 90
 
       # Gate 6: Expo Export (iOS and Android bundles, sequential)
       - name: "Gate 6a: Expo Export (iOS)"
