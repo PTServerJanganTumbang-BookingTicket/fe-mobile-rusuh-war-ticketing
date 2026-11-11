@@ -12,6 +12,14 @@
 # Targets dedicated repository-level self-hosted runner (sumopod-rusuh-mobile-01)
 # Runner is isolated under Linux user gha-runner with no sudo access.
 # Sequential execution required due to 3.6 GiB RAM constraint.
+#
+# Sibling workspace layout:
+#   $GITHUB_WORKSPACE/
+#   ├── fe-mobile-rusuh-war-ticketing/   (this repo)
+#   └── signal-ui-react-shared/          (pinned sibling dependency)
+#
+# Metro resolves signal-ui-react-shared from ../signal-ui-react-shared (origin-aware).
+# The sibling provides source only; dependencies resolve from this repo's node_modules.
 
 name: CI
 
@@ -32,9 +40,38 @@ jobs:
     name: CI Pipeline
     runs-on: [self-hosted, linux, x64, rusuh-mobile]
 
+    # All npm/expo commands run from the mobile repo directory
+    defaults:
+      run:
+        working-directory: fe-mobile-rusuh-war-ticketing
+
     steps:
-      - name: Checkout code
+      # Checkout this repository to a subdirectory (not workspace root)
+      - name: Checkout mobile repo
         uses: actions/checkout@v4
+        with:
+          path: fe-mobile-rusuh-war-ticketing
+
+      # Checkout signal-ui-react-shared as sibling at pinned SHA
+      # GITHUB_TOKEN has read access to same-org private repos by default
+      - name: Checkout signal-ui-react-shared (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: PTServerJanganTumbang-BookingTicket/signal-ui-react-shared
+          ref: dcc2f73a59cad7a5eb63265c110f518ed6a185b7
+          path: signal-ui-react-shared
+
+      - name: Verify sibling layout
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "=== Workspace layout ==="
+          ls -la
+          echo ""
+          echo "=== signal-ui-react-shared HEAD ==="
+          git -C signal-ui-react-shared rev-parse HEAD
+          echo ""
+          echo "=== fe-mobile-rusuh-war-ticketing HEAD ==="
+          git -C fe-mobile-rusuh-war-ticketing rev-parse HEAD
 
       - name: Verify Node.js version
         run: |
@@ -179,7 +216,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: expo-doctor-gh3-evidence
-          path: expo-doctor-output.txt
+          path: fe-mobile-rusuh-war-ticketing/expo-doctor-output.txt
           if-no-files-found: ignore
           retention-days: 90
 
