@@ -8,18 +8,17 @@
  * Scope: Button, Text, TextField (per Ticket #3)
  *
  * Note: We import directly from component paths (not the barrel export) to avoid
- * pulling in all 19 Signal UI components. Some components (Checkbox, Icon, etc.)
- * have dependencies (@gluestack-ui/themed) that are not installed in this app.
+ * pulling in all 19 Signal UI components. Only components approved in Ticket #3
+ * scope are exported here.
  *
- * LIMITATION: TextField requires @gluestack-ui/themed which is not installed.
- * TextField is temporarily excluded pending dependency resolution (see BLOCKED note).
+ * Dependencies: @gluestack-ui/themed (for TextField's Input primitives),
+ * react-native-svg (Gluestack peer), @types/react-native (peer metadata compat).
  */
 
 // Component exports - direct imports to avoid barrel re-export tree
 export { Button } from "signal-ui-react-shared/components/Button";
 export { Text } from "signal-ui-react-shared/components/Text";
-// TextField excluded - requires @gluestack-ui/themed dependency
-// export { TextField } from "signal-ui-react-shared/components/TextField";
+export { TextField } from "signal-ui-react-shared/components/TextField";
 
 // Type exports
 export type { ButtonProps } from "signal-ui-react-shared";

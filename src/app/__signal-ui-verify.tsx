@@ -2,26 +2,39 @@
  * Signal UI Runtime Verification Screen
  *
  * This screen forces Metro to bundle the real signal-ui-react-shared source
- * files through the custom resolver and css-interop extraNodeModules mapping.
+ * files through the custom resolver, css-interop extraNodeModules mapping,
+ * and @gluestack-ui/themed extraNodeModules mapping.
  *
  * Purpose: Verify GH-3 Signal UI integration works at runtime.
- * Scope: Button, Text verification (TextField BLOCKED - requires @gluestack-ui/themed).
+ * Scope: Button, Text, TextField (A3-min dependencies installed).
  *
  * This file should be removed or converted to a proper feature screen
  * after Ticket #3 is merged.
  */
 
 import { useState } from "react";
-import { View, ScrollView, Alert, TextInput } from "react-native";
+import { View, ScrollView, Alert } from "react-native";
 
 // Import from the core/presentation wrapper - this is the approved architecture
-import { Button, Text } from "@/core/presentation/components/signal";
+import { Button, Text, TextField } from "@/core/presentation/components/signal";
 
 export default function SignalUIVerifyScreen() {
   const [inputValue, setInputValue] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const handleButtonPress = () => {
     Alert.alert("Button Pressed", "Signal UI Button onPress works!");
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmailValue(value);
+    // Simple email validation for error state demonstration
+    if (value && !value.includes("@")) {
+      setEmailError("Please enter a valid email address");
+    } else {
+      setEmailError("");
+    }
   };
 
   return (
@@ -36,7 +49,7 @@ export default function SignalUIVerifyScreen() {
             This screen verifies real Signal UI source bundling.
           </Text>
           <Text variant="label" color="neutral-5">
-            Ticket #3 Runtime Verification
+            Ticket #3 Runtime Verification (A3-min Complete)
           </Text>
         </View>
 
@@ -88,21 +101,46 @@ export default function SignalUIVerifyScreen() {
           </View>
         </View>
 
-        {/* Section: TextField Note - BLOCKED */}
-        <View className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <Text variant="h3" className="mb-2">
-            TextField - BLOCKED
+        {/* Section: TextField Component Verification */}
+        <View className="mb-6">
+          <Text variant="h2" className="mb-4">
+            TextField Tests
           </Text>
-          <Text variant="body2" className="mb-2">
-            TextField requires @gluestack-ui/themed dependency which is not
-            installed. Using RN TextInput as placeholder for input verification.
-          </Text>
-          <TextInput
-            className="border border-gray-300 rounded p-2"
-            placeholder="Enter text here"
-            value={inputValue}
-            onChangeText={setInputValue}
-          />
+
+          {/* Basic TextField */}
+          <View className="mb-4">
+            <TextField
+              name="Username"
+              placeholder="Enter username"
+              value={inputValue}
+              onChange={setInputValue}
+              variant="primary"
+            />
+          </View>
+
+          {/* TextField with error state */}
+          <View className="mb-4">
+            <TextField
+              name="Email"
+              placeholder="Enter email"
+              value={emailValue}
+              onChange={handleEmailChange}
+              variant="primary"
+              errorText={emailError || undefined}
+            />
+          </View>
+
+          {/* Disabled TextField */}
+          <View className="mb-4">
+            <TextField
+              name="Disabled Field"
+              placeholder="Cannot edit"
+              value="Disabled value"
+              onChange={() => {}}
+              variant="secondary"
+              disabled
+            />
+          </View>
         </View>
 
         {/* Section: Verification Checklist */}
@@ -111,27 +149,41 @@ export default function SignalUIVerifyScreen() {
             Verification Checklist
           </Text>
           <Text variant="body2" className="mb-1">
-            ✓ Text h1, body1, label variants render
+            ✓ Text h1, h2, h3, body1, body2, label variants render
           </Text>
           <Text variant="body2" className="mb-1">
-            ✓ Button renders with variants
+            ✓ Button renders with primary/secondary/valid variants
           </Text>
           <Text variant="body2" className="mb-1">
             ✓ Button press triggers Alert
           </Text>
           <Text variant="body2" className="mb-1">
-            ⚠ TextField BLOCKED - needs @gluestack-ui/themed
+            ✓ Button disabled state works
+          </Text>
+          <Text variant="body2" className="mb-1">
+            ✓ TextField renders with label
+          </Text>
+          <Text variant="body2" className="mb-1">
+            ✓ TextField accepts input
+          </Text>
+          <Text variant="body2" className="mb-1">
+            ✓ TextField error state displays
           </Text>
           <Text variant="body2">✓ NativeWind classes apply</Text>
         </View>
 
         {/* Input echo for verification */}
-        {inputValue.length > 0 && (
+        {(inputValue.length > 0 || emailValue.length > 0) && (
           <View className="p-4 bg-blue-50 rounded-lg">
             <Text variant="label" color="info-5">
-              Input Value:
+              Input Values:
             </Text>
-            <Text variant="body1">{inputValue}</Text>
+            {inputValue.length > 0 && (
+              <Text variant="body2">Username: {inputValue}</Text>
+            )}
+            {emailValue.length > 0 && (
+              <Text variant="body2">Email: {emailValue}</Text>
+            )}
           </View>
         )}
       </View>

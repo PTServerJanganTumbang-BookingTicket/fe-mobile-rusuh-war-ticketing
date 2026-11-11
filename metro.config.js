@@ -10,17 +10,26 @@ const config = getDefaultConfig(__dirname);
 // Watch the signal-ui-react-shared directory for changes
 config.watchFolders = [signalUIPath];
 
-// Ensure React, React Native, and css-interop resolve from this app's node_modules
-// to prevent duplicate runtime instances when bundling sibling signal-ui source.
-// react-native-css-interop is required because NativeWind's babel jsxImportSource
-// transforms JSX to import from react-native-css-interop/jsx-runtime, and sibling
-// source files cannot resolve it through standard node_modules traversal.
+// Ensure React, React Native, css-interop, and Gluestack resolve from this app's
+// node_modules to prevent duplicate runtime instances when bundling sibling
+// signal-ui source. react-native-css-interop is required because NativeWind's
+// babel jsxImportSource transforms JSX to import from react-native-css-interop/jsx-runtime.
+// @gluestack-ui/themed and @gluestack-style/react are required for TextField's
+// Input/InputField/InputSlot/InputIcon imports from signal-ui-react-shared.
 config.resolver.extraNodeModules = {
   react: path.resolve(__dirname, "node_modules/react"),
   "react-native": path.resolve(__dirname, "node_modules/react-native"),
   "react-native-css-interop": path.resolve(
     __dirname,
     "node_modules/react-native-css-interop"
+  ),
+  "@gluestack-ui/themed": path.resolve(
+    __dirname,
+    "node_modules/@gluestack-ui/themed"
+  ),
+  "@gluestack-style/react": path.resolve(
+    __dirname,
+    "node_modules/@gluestack-style/react"
   ),
 };
 
