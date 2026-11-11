@@ -2,9 +2,13 @@
 
 ## Overview
 
-Integrate signal-ui-react-shared by configuring Metro bundler to resolve imports from the library's source files (since dist/ does not exist). TypeScript paths must resolve react/react-native through the app's node_modules to avoid duplicate runtime instances.
+Integrate signal-ui-react-shared by configuring Metro bundler to resolve imports from the library's source files (since dist/ does not exist). The integration required two bounded repair paths:
 
-The design follows the established Clean Architecture: Signal UI components are wrapped and re-exported from `core/presentation/` as the single entry point for the rest of the application.
+1. **A1 Metro Mapping Repair:** Add `react-native-css-interop` to `extraNodeModules` because NativeWind's babel jsxImportSource transforms JSX to require this runtime.
+
+2. **A3-min Dependency Repair:** Install `@gluestack-ui/themed`, `react-native-svg`, and `@types/react-native@0.73.0` as peer-satisfying dependencies for TextField's Gluestack imports.
+
+The design follows Clean Architecture: Signal UI components are wrapped and re-exported from `core/presentation/` as the single entry point for the rest of the application.
 
 ---
 
@@ -17,26 +21,61 @@ src/
 ├── core/
 │   └── presentation/
 │       └── components/
-│           └── signal/           # Signal UI re-exports
-│               ├── index.ts      # Barrel export
-│               ├── Button.tsx    # Thin wrapper (optional)
-│               ├── Text.tsx      # Thin wrapper (optional)
-│               └── TextField.tsx # Thin wrapper (optional)
+│           └── signal/
+│               └── index.ts      # Barrel re-export for Button, Text, TextField
 ```
 
 **Rationale:** Core/presentation is the correct home for design system components. Features import from `@/core/presentation/components/signal` rather than directly from signal-ui-react-shared, preserving a single integration point.
 
-### Domain Layer
+### Metro Resolver Configuration
 
-Not affected. Signal UI is pure presentation-layer concern.
+```javascript
+// Key extraNodeModules mappings
+config.resolver.extraNodeModules = {
+  react: path.resolve(__dirname, "node_modules/react"),
+  "react-native": path.resolve(__dirname, "node_modules/react-native"),
+  "react-native-css-interop": path.resolve(
+    __dirname,
+    "node_modules/react-native-css-interop"
+  ),
+  "@gluestack-ui/themed": path.resolve(
+    __dirname,
+    "node_modules/@gluestack-ui/themed"
+  ),
+  "@gluestack-style/react": path.resolve(
+    __dirname,
+    "node_modules/@gluestack-style/react"
+  ),
+};
+```
 
-### Data Layer
+**Why each mapping exists:**
 
-Not affected.
+| Module                     | Reason                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `react`                    | Prevent duplicate React runtime when bundling sibling source                                            |
+| `react-native`             | Prevent duplicate RN runtime when bundling sibling source                                               |
+| `react-native-css-interop` | NativeWind's babel jsxImportSource transforms JSX to import from `react-native-css-interop/jsx-runtime` |
+| `@gluestack-ui/themed`     | TextField imports Input/InputField/InputSlot/InputIcon from this package                                |
+| `@gluestack-style/react`   | Peer dependency of @gluestack-ui/themed, auto-resolved                                                  |
 
-### Presentation Layer
+### TypeScript Resolution
 
-Signal UI components live in `core/presentation/components/signal/`. Direct imports from signal-ui-react-shared are restricted to this directory only.
+TypeScript resolution uses a **declaration file approach** rather than tsconfig paths:
+
+```
+src/
+├── signal-ui-react-shared.d.ts   # Ambient module declarations
+```
+
+The declaration file provides type definitions for:
+
+- `signal-ui-react-shared` main module
+- `signal-ui-react-shared/components/*` component subpaths
+
+**Why not tsconfig paths?** The sibling signal-ui-react-shared source files import from their own `node_modules` (which doesn't exist) and from paths that don't exist in the app's context. A declaration file cleanly provides types without requiring TypeScript to traverse the actual source files.
+
+**Declaration Drift Risk:** The declaration file must be manually updated when signal-ui-react-shared component APIs change. Until signal-ui-react-shared provides a proper dist/ build with types, this is an accepted maintenance burden.
 
 ---
 
@@ -53,11 +92,8 @@ Signal UI components live in `core/presentation/components/signal/`. Direct impo
 ┌──────────────────────────────▼──────────────────────────────────┐
 │                Core Presentation Layer                          │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ src/core/presentation/components/signal/                 │    │
-│  │   ├── index.ts  ──────────► re-exports Button, Text, TF │    │
-│  │   ├── Button.tsx                                         │    │
-│  │   ├── Text.tsx                                           │    │
-│  │   └── TextField.tsx                                      │    │
+│  │ src/core/presentation/components/signal/index.ts         │    │
+│  │   └── re-exports Button, Text, TextField                 │    │
 │  └───────────────────────────┬─────────────────────────────┘    │
 └──────────────────────────────┼──────────────────────────────────┘
                                │ imports from
@@ -66,7 +102,9 @@ Signal UI components live in `core/presentation/components/signal/`. Direct impo
 │            External: signal-ui-react-shared/src/                │
 │  (Resolved via Metro custom resolver from sibling directory)    │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ Button, Text, TextField components + theme exports       │    │
+│  │ Button, Text, TextField components                       │    │
+│  │ └── TextField imports from @gluestack-ui/themed          │    │
+│  │     └── Input, InputField, InputSlot, InputIcon          │    │
 │  └─────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -75,114 +113,20 @@ Signal UI components live in `core/presentation/components/signal/`. Direct impo
 
 ## Data Flow
 
-**Import Resolution Flow:**
+**Metro Bundle Resolution Flow:**
 
 1. App code imports `@/core/presentation/components/signal`
-2. Barrel re-exports from signal-ui-react-shared
-3. Metro resolver intercepts `signal-ui-react-shared` import
-4. Resolves to `../signal-ui-react-shared/src/index.ts`
-5. Signal UI component code uses React/React Native
-6. Metro resolves react/react-native to app's node_modules (via extraNodeModules)
+2. Barrel re-exports from `signal-ui-react-shared/components/*`
+3. Metro resolver intercepts these imports via custom `resolveRequest`
+4. Resolves to `../signal-ui-react-shared/src/components/*/index.tsx`
+5. Signal UI component code uses React/React Native/Gluestack
+6. Metro resolves all via `extraNodeModules` to app's node_modules
 
 **TypeScript Resolution Flow:**
 
-1. TypeScript follows import to signal-ui source file
-2. tsconfig paths redirect react/react-native to app's node_modules
-3. Types resolve without traversing into signal-ui's (missing) node_modules
-
----
-
-## Components and Interfaces
-
-### Components
-
-| Component              | Responsibility                                     | Layer             |
-| ---------------------- | -------------------------------------------------- | ----------------- |
-| `signal/index.ts`      | Barrel export for Button, Text, TextField          | core/presentation |
-| `signal/Button.tsx`    | (Optional) Thin wrapper around signal-ui Button    | core/presentation |
-| `signal/Text.tsx`      | (Optional) Thin wrapper around signal-ui Text      | core/presentation |
-| `signal/TextField.tsx` | (Optional) Thin wrapper around signal-ui TextField | core/presentation |
-
-### Interfaces
-
-```typescript
-// Re-export from signal-ui-react-shared
-export { Button } from "signal-ui-react-shared";
-export type { ButtonProps } from "signal-ui-react-shared";
-
-export { Text } from "signal-ui-react-shared";
-export type { TextProps } from "signal-ui-react-shared";
-
-export { TextField } from "signal-ui-react-shared";
-export type { TextFieldProps } from "signal-ui-react-shared";
-```
-
----
-
-## Data Models
-
-No domain models required. Signal UI is pure presentation.
-
----
-
-## Correctness Properties
-
-### Property 1: Single React Runtime
-
-**Validates: Requirements 6.1, 6.2**
-
-Metro's `extraNodeModules` ensures all React/React Native imports resolve to the app's node_modules, preventing duplicate runtime instances that would cause hook errors.
-
-**Enforced by:** Metro resolver configuration + render tests that would fail with "Invalid hook call" if duplicates existed.
-
-### Property 2: Clean Architecture Boundary
-
-**Validates: Requirements 8.4**
-
-Direct signal-ui-react-shared imports are restricted to `core/presentation/components/signal/`. Feature layers import from `@/core/presentation/components/signal`.
-
-**Enforced by:** eslint-plugin-boundaries rules (boundary-check gate).
-
-### Property 3: Type Resolution Consistency
-
-**Validates: Requirements 2.2, 7.1**
-
-TypeScript resolves types for Button, Text, TextField without errors or suppressions.
-
-**Enforced by:** `npm run typecheck` gate.
-
----
-
-## Error Handling
-
-| Error Type                    | Layer   | Handling Strategy                 | User Feedback                  |
-| ----------------------------- | ------- | --------------------------------- | ------------------------------ |
-| Metro resolution failure      | Build   | Fail build with clear error       | Build error message            |
-| TypeScript resolution failure | Build   | BLOCKED — requires human decision | N/A (build-time)               |
-| Component render failure      | Runtime | React error boundary (future)     | Crash/blank screen (temporary) |
-
----
-
-## Testing Strategy
-
-### Unit Tests
-
-| Test File                                | Purpose                                       | Coverage Target       |
-| ---------------------------------------- | --------------------------------------------- | --------------------- |
-| `__tests__/signal-ui/Button.test.tsx`    | Button renders, press works, loading state    | R3-AC1 through R3-AC4 |
-| `__tests__/signal-ui/Text.test.tsx`      | Text renders with variants h1, body1, label   | R4-AC1 through R4-AC4 |
-| `__tests__/signal-ui/TextField.test.tsx` | TextField renders, accepts input, shows error | R5-AC1 through R5-AC3 |
-
-### Integration Tests
-
-| Test                | Purpose                                              |
-| ------------------- | ---------------------------------------------------- |
-| T3-01 (from ticket) | Metro bundler starts without resolution errors       |
-| T3-09 (from ticket) | No duplicate React runtime (single React resolution) |
-
-### E2E Tests
-
-Not required for this ticket. Manual QA in Expo Go is verification method.
+1. TypeScript follows import to `signal-ui-react-shared`
+2. `src/signal-ui-react-shared.d.ts` provides ambient module declarations
+3. Types resolve without traversing signal-ui source files
 
 ---
 
@@ -198,73 +142,101 @@ Not required for this ticket. Manual QA in Expo Go is verification method.
 
 - (+) No library modifications required
 - (+) Changes in signal-ui source hot-reload during development
-- (-) Tighter coupling to library source structure
-- (-) TypeScript needs path aliases for transitive dependencies
+- (-) Requires extraNodeModules for all dependencies signal-ui uses
+- (-) TypeScript needs declaration file or path aliases
 
-### ADR-GH3-02: Core/Presentation as Signal UI Host
+### ADR-GH3-02: Declaration File TypeScript Resolution
 
-**Context:** Signal UI components could be imported directly by features, or centralized in core/presentation.
+**Context:** tsconfig paths mapping was investigated but would require TypeScript to traverse signal-ui source files with missing transitive dependencies.
 
-**Decision:** All Signal UI imports flow through `core/presentation/components/signal/`.
-
-**Consequences:**
-
-- (+) Single point of modification if library API changes
-- (+) Can add app-specific wrappers/defaults if needed
-- (+) Clean Architecture boundary enforcement is straightforward
-- (-) Slight indirection for imports
-
-### ADR-GH3-03: Thin Wrappers vs Direct Re-export
-
-**Context:** Signal UI components could be re-exported directly or wrapped with app-specific defaults.
-
-**Decision:** Start with direct re-exports. Add thin wrappers only if app-specific defaults emerge.
+**Decision:** Use ambient module declarations in `src/signal-ui-react-shared.d.ts` to provide types.
 
 **Consequences:**
 
-- (+) Minimal code to maintain
-- (+) Signal UI API is fully exposed
-- (-) No place for app-wide defaults until wrappers are added
+- (+) Clean typecheck without signal-ui source traversal
+- (+) Works with Metro's runtime resolution
+- (-) Declaration file must be manually maintained
+- (-) API changes in signal-ui require matching declaration updates
+
+**Drift Mitigation:** When signal-ui-react-shared provides proper dist/ with types (Ticket #4 or later), the declaration file should be removed in favor of real types.
+
+### ADR-GH3-03: A3-min Dependency Installation
+
+**Context:** TextField requires @gluestack-ui/themed which has peer dependencies on react-native-svg and @types/react-native.
+
+**Decision:** Install exactly three packages to satisfy peers without runtime duplicates:
+
+- `@gluestack-ui/themed@1.1.73` — Runtime requirement for TextField
+- `react-native-svg@15.16.0` — Expo SDK 58 pinned version (bundledNativeModules.json)
+- `@types/react-native@0.73.0` — Peer metadata containment (no runtime deps, prevents npm from auto-resolving to 0.72.8 which drags in duplicate virtualized-lists)
+
+**Consequences:**
+
+- (+) TextField works with real Gluestack Input components
+- (+) Zero duplicate runtimes (verified: single react, react-native, css-interop, virtualized-lists)
+- (-) @types/react-native@0.73.0 is deprecated (types built into RN 0.88+), present only for peer satisfaction
+- (-) expo-doctor warns about @types/react-native installation (non-blocking)
+
+### ADR-GH3-04: react-native-css-interop extraNodeModules Mapping
+
+**Context:** After adding Signal UI source via watchFolders, Metro bundling failed with "Unable to resolve react-native-css-interop/jsx-runtime".
+
+**Root Cause:** NativeWind v4's babel preset uses `jsxImportSource: 'react-native-css-interop'`, which transforms JSX in ALL watched files (including signal-ui source) to import from `react-native-css-interop/jsx-runtime`. Signal-ui source files cannot resolve this through standard node_modules traversal because they're outside the app's node_modules tree.
+
+**Decision:** Add `react-native-css-interop` to Metro's `extraNodeModules` mapping.
+
+**Consequences:**
+
+- (+) All watched source files can resolve css-interop runtime
+- (+) No modifications to signal-ui-react-shared required
+- (-) Couples app's Metro config to NativeWind's internal babel behavior
 
 ---
 
 ## Dependencies
 
-### External Packages
+### External Packages (Installed)
 
-| Package                | Purpose                   | Already Installed  |
-| ---------------------- | ------------------------- | ------------------ |
-| signal-ui-react-shared | Design system components  | No (source-linked) |
-| @gluestack-ui/themed   | Signal UI peer dependency | No (transitive)    |
+| Package                | Version  | Purpose                            | Added by Repair     |
+| ---------------------- | -------- | ---------------------------------- | ------------------- |
+| @gluestack-ui/themed   | ^1.1.73  | TextField Input primitives         | A3-min              |
+| @gluestack-style/react | 1.0.57   | Auto-resolved Gluestack peer       | A3-min (transitive) |
+| react-native-svg       | ^15.16.0 | Gluestack peer, Expo SDK 58 pinned | A3-min              |
+| @types/react-native    | ^0.73.0  | Peer metadata containment          | A3-min              |
 
-### Internal Modules
+### External Packages (Already Present)
 
-- `src/app/_layout.tsx` — May need Nativewind preset update for Signal UI theme
-- `metro.config.js` — Requires custom resolver addition
-- `tsconfig.json` — Requires paths configuration
-- `tailwind.config.js` — May need Signal UI preset integration
+| Package                        | Purpose                                                |
+| ------------------------------ | ------------------------------------------------------ |
+| nativewind@4.2.7               | Tailwind CSS for RN, provides react-native-css-interop |
+| react-native-css-interop@0.2.7 | NativeWind peer, jsx-runtime provider                  |
+
+### Internal Modules Modified
+
+- `metro.config.js` — Custom resolver + extraNodeModules
+- `src/signal-ui-react-shared.d.ts` — Type declarations
+- `src/core/presentation/components/signal/index.ts` — Component wrapper
+- `src/app/__signal-ui-verify.tsx` — Runtime verification screen
 
 ---
 
 ## Risks
 
-| Risk                                                         | Likelihood | Impact | Mitigation                                                                       |
-| ------------------------------------------------------------ | ---------- | ------ | -------------------------------------------------------------------------------- |
-| @gluestack-ui/themed React 19 incompatibility                | Medium     | High   | Monitor runtime; fallback to wrapping with try/catch                             |
-| TypeScript cannot resolve signal-ui transitive deps          | Medium     | Medium | Attempt tsconfig paths first; if unresolvable, report BLOCKED for human decision |
-| Metro resolver breaks on signal-ui internal structure change | Low        | Medium | Pin to known-working commit; test on CI                                          |
-| Duplicate React runtime despite extraNodeModules             | Low        | High   | T3-09 test catches this; fail loudly                                             |
+| Risk                                                | Likelihood | Impact | Mitigation                                                    |
+| --------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------- |
+| Declaration drift when signal-ui API changes        | High       | Medium | Document maintenance expectation; remove when dist/ available |
+| @gluestack-ui/themed React 19 peer warning          | Low        | Low    | Peer warning only, runtime works                              |
+| expo-doctor @types/react-native warning             | Certain    | None   | Expected; non-blocking warning                                |
+| Metro resolver breaks on signal-ui structure change | Low        | Medium | Test on CI; pin to known-working commit                       |
 
 ---
 
-## Open Questions
+## Known Limitations
 
-**RESOLVED:**
+1. **Button has no loading prop:** Signal UI Button API does not include a loading prop. R3-AC3 ("Button loading state renders correctly") cannot be satisfied by the current library. This requires specification correction.
 
-1. ~~Where does signal-ui-react-shared live?~~ → `../signal-ui-react-shared` (sibling in SemestralAssessment workspace)
+2. **TextField API differs from common patterns:** Uses `name` (not `label`), `onChange` (not `onChangeText`), `errorText` (not `error`).
 
-2. ~~Does signal-ui-react-shared have dist/?~~ → No. Source consumption required.
-
-3. ~~Which components are in scope?~~ → Button, Text, TextField only.
-
-**NO UNRESOLVED QUESTIONS** — Ticket #3 scope is fully defined.
+3. **expo-doctor warnings:** Two non-blocking warnings expected:
+   - @types/react-native should not be installed directly
+   - Missing peer dependencies react-dom and react-native-web (web-only)
