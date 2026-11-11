@@ -240,3 +240,187 @@ The declaration file provides type definitions for:
 3. **expo-doctor warnings:** Two non-blocking warnings expected:
    - @types/react-native should not be installed directly
    - Missing peer dependencies react-dom and react-native-web (web-only)
+
+---
+
+## Components and Interfaces
+
+### Signal UI Components (Re-exported)
+
+| Component   | Source Path                                   | Props Interface                                                                                                    |
+| ----------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Button`    | `signal-ui-react-shared/components/Button`    | `children: ReactNode`, `variant?: string`, `onPress?: () => void`                                                  |
+| `Text`      | `signal-ui-react-shared/components/Text`      | `children: ReactNode`, `variant?: string`, `className?: string`                                                    |
+| `TextField` | `signal-ui-react-shared/components/TextField` | `name: string`, `value: string`, `onChange: (value: string) => void`, `errorText?: string`, `placeholder?: string` |
+
+### Internal Interfaces
+
+```typescript
+// src/core/presentation/components/signal/index.ts
+export { Button } from "signal-ui-react-shared/components/Button";
+export { Text } from "signal-ui-react-shared/components/Text";
+export { TextField } from "signal-ui-react-shared/components/TextField";
+```
+
+### Metro Resolver Interface
+
+```typescript
+// metro.config.js resolveRequest signature
+resolveRequest: (
+  context: ResolutionContext,
+  moduleName: string,
+  platform: string | null
+) => Resolution | null;
+```
+
+---
+
+## Data Models
+
+This integration is primarily configuration-based and does not introduce new data models. The components are stateless presentation primitives that receive props from consuming features.
+
+### Type Declarations
+
+```typescript
+// src/signal-ui-react-shared.d.ts
+declare module "signal-ui-react-shared" {
+  export { Button } from "signal-ui-react-shared/components/Button";
+  export { Text } from "signal-ui-react-shared/components/Text";
+  export { TextField } from "signal-ui-react-shared/components/TextField";
+}
+
+declare module "signal-ui-react-shared/components/Button" {
+  import { FC, ReactNode } from "react";
+  export interface ButtonProps {
+    children: ReactNode;
+    variant?: string;
+    onPress?: () => void;
+  }
+  export const Button: FC<ButtonProps>;
+}
+
+declare module "signal-ui-react-shared/components/Text" {
+  import { FC, ReactNode } from "react";
+  export interface TextProps {
+    children: ReactNode;
+    variant?: string;
+    className?: string;
+  }
+  export const Text: FC<TextProps>;
+}
+
+declare module "signal-ui-react-shared/components/TextField" {
+  import { FC } from "react";
+  export interface TextFieldProps {
+    name: string;
+    value: string;
+    onChange: (value: string) => void;
+    errorText?: string;
+    placeholder?: string;
+  }
+  export const TextField: FC<TextFieldProps>;
+}
+```
+
+---
+
+## Correctness Properties
+
+### P1: Single Runtime Instance
+
+**Property:** Only one instance of React, React Native, and react-native-css-interop exists in the bundle.
+
+**Verification:** `npm ls react react-native react-native-css-interop` returns exactly one resolved path per package.
+
+### P2: Metro Resolution Completeness
+
+**Property:** All imports from `signal-ui-react-shared/*` resolve to valid source files at bundle time.
+
+**Verification:** Metro bundler completes without "Unable to resolve module" errors.
+
+### P3: TypeScript Type Coverage
+
+**Property:** All re-exported components have type definitions that match their runtime behavior.
+
+**Verification:** `npm run typecheck` passes with no errors on files importing from `@/core/presentation/components/signal`.
+
+### P4: Clean Architecture Boundary
+
+**Property:** No feature or app layer code imports directly from `signal-ui-react-shared`; all access goes through `@/core/presentation/components/signal`.
+
+**Verification:** `grep -r "from ['\"]signal-ui-react-shared" src/` returns only hits in `src/core/presentation/components/signal/` and `src/signal-ui-react-shared.d.ts`.
+
+---
+
+## Error Handling
+
+### Build-Time Errors
+
+| Error                                                          | Cause                                            | Resolution                                                             |
+| -------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `Unable to resolve module "signal-ui-react-shared"`            | Metro resolver misconfigured                     | Verify `resolveRequest` in metro.config.js handles the module prefix   |
+| `Unable to resolve module "react-native-css-interop"`          | Missing extraNodeModules entry                   | Add mapping in metro.config.js extraNodeModules                        |
+| `Unable to resolve module "@gluestack-ui/themed"`              | Package not installed or not in extraNodeModules | Run `npm install @gluestack-ui/themed` and add to extraNodeModules     |
+| TypeScript error "Cannot find module 'signal-ui-react-shared'" | Declaration file missing or malformed            | Verify `src/signal-ui-react-shared.d.ts` exists and has correct syntax |
+
+### Runtime Errors
+
+| Error                                             | Cause                                    | Resolution                                                      |
+| ------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| `Invalid hook call` or `Multiple React instances` | Duplicate React in bundle                | Verify extraNodeModules maps react to single location           |
+| Gluestack styling not applied                     | @gluestack-style/react not resolving     | Verify extraNodeModules includes @gluestack-style/react mapping |
+| TextField Input not rendering                     | @gluestack-ui/themed Input import failed | Verify package installed and extraNodeModules configured        |
+
+### Development Workflow Errors
+
+| Error                                      | Cause                                        | Resolution                                |
+| ------------------------------------------ | -------------------------------------------- | ----------------------------------------- |
+| Hot reload not detecting signal-ui changes | watchFolders not including sibling directory | Verify metro.config.js watchFolders array |
+| expo-doctor peer dependency warnings       | @types/react-native installed                | Expected; non-blocking (see ADR-GH3-03)   |
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+Not applicable for this integration ticket. Signal UI components are tested within the signal-ui-react-shared repository. This ticket's scope is configuration and re-export only.
+
+### Integration Tests
+
+| Test Case                                | Method                            | Expected Result                                |
+| ---------------------------------------- | --------------------------------- | ---------------------------------------------- |
+| Metro bundles without errors             | `npx expo export --platform ios`  | Exit code 0, no "Unable to resolve" errors     |
+| TypeScript compiles without errors       | `npm run typecheck`               | Exit code 0                                    |
+| Components render in verification screen | Manual: navigate to verify screen | Button, Text, TextField visible and functional |
+
+### Verification Screen
+
+A dedicated verification screen at `src/app/__signal-ui-verify.tsx` provides runtime verification:
+
+```typescript
+// Renders all three components with interactive state
+- Button: pressable, logs to console
+- Text: displays styled content
+- TextField: accepts input, shows value
+```
+
+### Acceptance Criteria Verification
+
+| AC  | Verification Method                 | Pass Criteria                                     |
+| --- | ----------------------------------- | ------------------------------------------------- |
+| AC1 | `npm run typecheck`                 | Exit 0                                            |
+| AC2 | Metro bundler log                   | No duplicate runtime warnings                     |
+| AC3 | ~~Render Button with loading=true~~ | **Blocked:** Button has no loading prop           |
+| AC4 | Render TextField, trigger onChange  | Value updates, no console errors                  |
+| AC5 | Import path grep                    | All feature imports use `@/core/presentation/...` |
+
+### CI Integration
+
+Recommended CI steps for regression protection:
+
+```yaml
+- npm run typecheck
+- npm run lint
+- npx expo export --platform ios --output-dir /tmp/export-check
+```

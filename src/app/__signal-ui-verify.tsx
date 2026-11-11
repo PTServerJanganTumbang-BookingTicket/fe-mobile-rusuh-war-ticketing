@@ -59,7 +59,7 @@ export default function SignalUIVerifyScreen() {
             Button Tests
           </Text>
 
-          {/* Primary button with string children - T3-06 warning trigger */}
+          {/* Primary button with string children */}
           <View className="mb-3">
             <Button
               variant="primary"

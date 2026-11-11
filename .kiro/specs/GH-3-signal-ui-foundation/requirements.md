@@ -117,13 +117,15 @@ Integrate signal-ui-react-shared library via custom Metro resolver. Verify that 
 - R8-AC2: `npm run typecheck` passes
 - R8-AC3: `npm test` passes
 - R8-AC4: `npm run boundary-check` passes
-- R8-AC5: `npx expo-doctor` completes (18/20 expected due to known warnings)
+- R8-AC5: `npx expo-doctor` — ACCEPTED GH-3 EXCEPTION (18/20, exit 1; human adjudicated)
 - R8-AC6: `npx expo export` succeeds for iOS and Android
 
-**Note on R8-AC5:** expo-doctor reports two known non-blocking warnings:
+**Note on R8-AC5:** expo-doctor 18/20 is ACCEPTED GH-3 EXCEPTION — HUMAN ADJUDICATED. Supervisor A / Rosyid granted exception for:
 
-1. @types/react-native should not be installed directly (present for peer metadata containment)
-2. Missing react-dom and react-native-web peers (web-only requirements)
+1. @types/react-native@0.73.0 — peer metadata containment to avoid duplicate virtualized-lists
+2. Missing react-dom/react-native-web — web-only Gluestack peers not needed for mobile
+
+This exception covers ONLY these two findings. No other expo-doctor failures are accepted.
 
 ---
 

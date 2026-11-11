@@ -135,14 +135,14 @@ Updated spec files to reflect actual implementation:
 
 ### CI Gates
 
-| Gate           | Status  | Evidence                        |
-| -------------- | ------- | ------------------------------- |
-| lint           | ✅ PASS | `npm run lint` exit 0           |
-| typecheck      | ✅ PASS | `npm run typecheck` exit 0      |
-| test           | ✅ PASS | 36/36 tests pass                |
-| boundary-check | ✅ PASS | `npm run boundary-check` exit 0 |
-| expo-doctor    | ✅ PASS | 18/20 checks (2 known warnings) |
-| expo-export    | ✅ PASS | iOS/Android/Web bundles created |
+| Gate           | Status                                      | Evidence                        |
+| -------------- | ------------------------------------------- | ------------------------------- |
+| lint           | ✅ PASS                                     | `npm run lint` exit 0           |
+| typecheck      | ✅ PASS                                     | `npm run typecheck` exit 0      |
+| test           | ✅ PASS                                     | 36/36 tests pass                |
+| boundary-check | ✅ PASS                                     | `npm run boundary-check` exit 0 |
+| expo-doctor    | ACCEPTED GH-3 EXCEPTION — HUMAN ADJUDICATED | 18/20, exit 1 (not PASS)        |
+| expo-export    | ✅ PASS                                     | iOS/Android/Web bundles created |
 
 ### Duplicate Runtime Check
 
@@ -177,7 +177,22 @@ Updated spec files to reflect actual implementation:
 
 ## Known Warnings
 
-### expo-doctor (Expected, Non-Blocking)
+### expo-doctor (ACCEPTED GH-3 EXCEPTION — HUMAN ADJUDICATED)
+
+**Result:** 18/20, exit code 1
+
+**This is NOT a PASS.** Supervisor A / Rosyid granted a narrow GH-3 exception covering ONLY:
+
+**A. @types/react-native@0.73.0**
+
+- Exists solely to satisfy legacy @gluestack-ui/themed@1.1.73 peer metadata
+- Prevents npm resolution to @types/react-native@0.72.8 which causes duplicate @react-native/virtualized-lists@0.72.x
+- Application uses React Native 0.88.1's built-in types as actual RN type source
+
+**B. Missing react-dom / react-native-web Gluestack peer metadata**
+
+- Web-only peers not required for mobile GH-3 integration
+- Not installed to avoid adding unnecessary web dependencies
 
 1. **@types/react-native warning:** "should not be installed directly" — Present for peer metadata containment only
 2. **Missing react-dom/react-native-web:** Web-only Gluestack peers, not required for mobile runtime
