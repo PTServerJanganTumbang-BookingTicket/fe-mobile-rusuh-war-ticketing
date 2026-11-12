@@ -17,6 +17,14 @@ export { mapEventDTO, mapEventDTOs } from "./mappers";
 export { FakeEventDataSource } from "./FakeEventDataSource";
 export type { FakeEventDataSourceConfig } from "./FakeEventDataSource";
 
+// GH-17: Real HTTP data source
+export { RealEventDataSource, ApiError } from "./RealEventDataSource";
+export type {
+  RealEventDataSourceConfig,
+  GetEventsParams,
+  ApiErrorCode,
+} from "./RealEventDataSource";
+
 // Repository implementations
 export { FakeEventRepository } from "./FakeEventRepository";
 
