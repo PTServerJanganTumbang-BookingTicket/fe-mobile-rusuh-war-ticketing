@@ -58,7 +58,8 @@ describe("FakeEventDataSource", () => {
       await dataSource.getEvents();
       const elapsed = Date.now() - start;
 
-      expect(elapsed).toBeGreaterThanOrEqual(50);
+      // Allow 2ms tolerance for timer precision on CI
+      expect(elapsed).toBeGreaterThanOrEqual(48);
     });
 
     it("should default to no delay (0ms)", async () => {
