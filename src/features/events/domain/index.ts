@@ -7,3 +7,6 @@
 
 // Domain entity types
 export type { Event, EventStatus, QueueState, DisplayBlock } from "./Event";
+
+// Repository port interface
+export type { EventRepository } from "./EventRepository";
