@@ -53,3 +53,7 @@ coverage/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Sibling repositories (prevent accidental inclusion)
+be-rusuh-war-ticketing/
+fe-web-rusuh-war-ticketing/
