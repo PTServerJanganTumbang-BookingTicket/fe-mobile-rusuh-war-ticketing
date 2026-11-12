@@ -14,3 +14,9 @@ export { isValidQueueUpdate, hasGrantInfo } from "./queue-update.types";
 // Scenario types
 export type { QueueScenario, QueueScenarioStep } from "./queue-scenario.types";
 export { isValidScenario, isValidScenarioStep } from "./queue-scenario.types";
+
+// ETA calculation utilities (T2)
+export { calculateEta, formatEta } from "./queue-eta.utils";
+
+// Progress calculation utilities (T3)
+export { calculateProgress } from "./queue-progress.utils";
