@@ -1,13 +1,15 @@
 /**
  * Events Feature Module
  *
- * GH-16: Public API for Events feature.
+ * GH-17: Public API for Events feature.
  * All external imports should come through this barrel.
  *
  * Architecture:
  * - Domain: Event types and EventRepository interface
- * - Data: FakeEventRepository (to be replaced by HttpEventRepository in GH-17)
+ * - Data: FakeEventRepository, RealEventDataSource (GH-17)
  * - Presentation: EventsHomeScreen, EventCard, hooks
+ *
+ * Boundary Rule: EventDTO stays in data layer; only domain Event is exported.
  */
 
 // ============================================================================
@@ -15,7 +17,6 @@
 // ============================================================================
 export type {
   Event,
-  EventStatus,
   QueueState,
   DisplayBlock,
   EventRepository,
@@ -26,6 +27,14 @@ export type {
 // ============================================================================
 export { FakeEventRepository, FakeEventDataSource } from "./data";
 export type { FakeEventDataSourceConfig } from "./data";
+
+// GH-17: Real HTTP data source
+export { RealEventDataSource, ApiError } from "./data";
+export type {
+  RealEventDataSourceConfig,
+  GetEventsParams,
+  ApiErrorCode,
+} from "./data";
 
 // Fixtures (for testing purposes)
 export { FAKE_EVENTS } from "./data";

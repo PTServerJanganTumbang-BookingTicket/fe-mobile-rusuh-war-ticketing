@@ -438,8 +438,8 @@ T6 (presentation) ──► T7 (unit tests) ──► T8 (integration tests) ─
 The following user-facing text needs product confirmation before final implementation:
 
 1. **FULL_BOOKED queue state label:** What should the EventCard show?
-   - Current placeholder: "Full (May Return)"
-   - Options: "May Return", "Notify Me", "Full", "Inventory Full"
+   - Current: "Full" (neutral, states the fact)
+   - Final copy TBD by product
    - Impact: RT-EVT17-04 test assertion
 
 2. **CLOSED queue state label:** Confirm "Closed" is acceptable

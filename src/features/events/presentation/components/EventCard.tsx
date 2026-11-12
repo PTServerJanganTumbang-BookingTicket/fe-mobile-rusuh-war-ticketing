@@ -1,8 +1,8 @@
 /**
  * EventCard Component
  *
- * GH-16: Feature-local event card displaying event summary information.
- * Matches Figma "Home — Mobile" frame patterns.
+ * GH-17: Feature-local event card displaying event summary information.
+ * Evolved from GH-16: 5 queue states, no status badge.
  *
  * Note: CTA button onPress is a placeholder — queue join is out of scope.
  */
@@ -19,33 +19,28 @@ import type { Event } from "../../domain";
 
 /**
  * Maps QueueState to user-friendly display text
+ * GH-17: 5 states (SCHEDULED, OPEN, FULL_QUEUE, FULL_BOOKED, CLOSED)
  */
 const QUEUE_STATE_LABELS: Record<Event["queueState"], string> = {
-  NOT_OPEN: "Coming Soon",
-  DIRECT: "Direct Purchase",
-  OPEN: "Open",
-  FULL: "Queue Full",
+  SCHEDULED: "Coming Soon",
+  OPEN: "Queue Open",
+  FULL_QUEUE: "Queue Full",
+  FULL_BOOKED: "Full", // PRODUCT_COPY_REQUIRED: neutral label pending final copy
+  CLOSED: "Closed",
 };
 
 /**
- * Maps EventStatus to user-friendly display text
+ * Maps QueueState to indicator colors
  */
-const STATUS_LABELS: Record<Event["status"], string> = {
-  AVAILABLE: "Available",
-  SELLING_OUT_FAST: "Selling Out Fast",
-  SOLD_OUT: "Sold Out",
-};
-
-/**
- * Maps EventStatus to badge style
- */
-const STATUS_COLORS: Record<
-  Event["status"],
-  { backgroundColor: string; color: string }
+const QUEUE_STATE_COLORS: Record<
+  Event["queueState"],
+  { indicator: string; text: string }
 > = {
-  AVAILABLE: { backgroundColor: "#22c55e", color: "#ffffff" },
-  SELLING_OUT_FAST: { backgroundColor: "#f97316", color: "#ffffff" },
-  SOLD_OUT: { backgroundColor: "#ef4444", color: "#ffffff" },
+  SCHEDULED: { indicator: "#9ca3af", text: "#6b7280" }, // Gray
+  OPEN: { indicator: "#22c55e", text: "#16a34a" }, // Green
+  FULL_QUEUE: { indicator: "#f97316", text: "#ea580c" }, // Orange
+  FULL_BOOKED: { indicator: "#ef4444", text: "#dc2626" }, // Red
+  CLOSED: { indicator: "#6b7280", text: "#4b5563" }, // Dark gray
 };
 
 export type EventCardProps = {
@@ -79,6 +74,21 @@ function formatDate(dateString: string): string {
   }
 }
 
+/**
+ * Derives CTA button text from queue state and enabled flag
+ * GH-17: Labels derived from queueState, not display.action
+ */
+function getCTALabel(
+  queueState: Event["queueState"],
+  enabled: boolean
+): string {
+  if (!enabled) {
+    return "Unavailable";
+  }
+  // OPEN or FULL_BOOKED with enabled=true
+  return queueState === "FULL_BOOKED" ? "Notify Me" : "Join Queue";
+}
+
 export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -87,7 +97,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   };
 
   const handleCTAPress = () => {
-    // Placeholder: Queue join is out of scope for GH-16
+    // Placeholder: Queue join is out of scope for GH-17
     // eslint-disable-next-line no-console
     console.log(`CTA pressed for event: ${event.id}`);
     onPress?.();
@@ -96,7 +106,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const imageSource =
     event.imageUrl && !imageError ? { uri: event.imageUrl } : PLACEHOLDER_IMAGE;
 
-  const statusStyle = STATUS_COLORS[event.status];
+  const queueStateStyle = QUEUE_STATE_COLORS[event.queueState];
 
   return (
     <View style={styles.card}>
@@ -108,18 +118,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         accessibilityLabel={`Image for ${event.name}`}
       />
 
-      {/* Status Badge */}
-      <View
-        style={[
-          styles.statusBadge,
-          { backgroundColor: statusStyle.backgroundColor },
-        ]}
-      >
-        <Text style={[styles.statusText, { color: statusStyle.color }]}>
-          {STATUS_LABELS[event.status]}
-        </Text>
-      </View>
-
       {/* Event Details */}
       <View style={styles.content}>
         {/* Category */}
@@ -129,17 +127,22 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         <Text style={styles.name}>{event.name}</Text>
 
         {/* Location */}
-        <Text style={styles.location}>
-          {event.venue}, {event.city}
-        </Text>
+        <Text style={styles.location}>{event.location}</Text>
 
         {/* Date */}
         <Text style={styles.date}>{formatDate(event.date)}</Text>
 
         {/* Queue State Indicator */}
         <View style={styles.queueStateContainer}>
-          <View style={styles.queueStateIndicator} />
-          <Text style={styles.queueStateText}>
+          <View
+            style={[
+              styles.queueStateIndicator,
+              { backgroundColor: queueStateStyle.indicator },
+            ]}
+          />
+          <Text
+            style={[styles.queueStateText, { color: queueStateStyle.text }]}
+          >
             {QUEUE_STATE_LABELS[event.queueState]}
           </Text>
         </View>
@@ -161,11 +164,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
               !event.display.enabled && styles.ctaButtonTextDisabled,
             ]}
           >
-            {event.display.enabled
-              ? event.display.action === "JOIN_QUEUE"
-                ? "Join Queue"
-                : "Buy Tickets"
-              : "Unavailable"}
+            {getCTALabel(event.queueState, event.display.enabled)}
           </Text>
         </Pressable>
       </View>
@@ -190,18 +189,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 180,
     backgroundColor: "#e5e7eb",
-  },
-  statusBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   content: {
     padding: 16,
@@ -238,12 +225,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#3b82f6",
     marginRight: 8,
   },
   queueStateText: {
     fontSize: 13,
-    color: "#3b82f6",
     fontWeight: "500",
   },
   ctaButton: {

@@ -1,48 +1,54 @@
 /**
  * Event Domain Entity
  *
- * GH-16: Domain types for Events feature.
- * Matches canonical contract schema in docs/CONTRACT-BASELINE.md
+ * GH-17: Evolved domain types for Events feature.
+ * Matches real contract (sjtrbt20261112.openapi.json).
+ *
+ * Evolution from GH-16:
+ * - QueueState: 4 values → 5 values (NOT_OPEN/DIRECT/OPEN/FULL → SCHEDULED/OPEN/FULL_QUEUE/FULL_BOOKED/CLOSED)
+ * - EventStatus: REMOVED (not in GET /events list response)
+ * - DisplayBlock: Simplified (only enabled; action/labelKey/badgeKey removed)
+ * - Event.venue/city: Merged into location
+ * - Event.saleStartsAt: Added (optional)
  *
  * Note: Queue-specific fields (ticket_no, now_serving, position) belong
  * to Queue feature domain, not Events.
  */
 
 /**
- * Ticket availability status
- * @see CONTRACT-BASELINE.md §6.1
- */
-export type EventStatus = "AVAILABLE" | "SELLING_OUT_FAST" | "SOLD_OUT";
-
-/**
  * Queue admission state
- * NOT_OPEN → Queue not accepting participants yet
- * DIRECT → No queue, direct ticket purchase
- * OPEN → Queue accepting participants
- * FULL → Queue capacity reached (temporary)
  *
- * @see CONTRACT-BASELINE.md §2.3
+ * GH-17: Evolved from GH-16 (NOT_OPEN/DIRECT/OPEN/FULL) to real contract values.
+ *
+ * SCHEDULED  → Sale not yet opened; display.enabled=false
+ * OPEN       → Queue accepting participants; display.enabled=true
+ * FULL_QUEUE → Queue capacity reached (temporary); display.enabled=false
+ * FULL_BOOKED → Inventory exhaustion (reversible); display.enabled=true
+ * CLOSED     → Terminal sale closure; display.enabled=false
+ *
+ * @see sjtrbt20261112.openapi.json GET /events
  */
-export type QueueState = "NOT_OPEN" | "DIRECT" | "OPEN" | "FULL";
+export type QueueState =
+  "SCHEDULED" | "OPEN" | "FULL_QUEUE" | "FULL_BOOKED" | "CLOSED";
 
 /**
  * Server-computed display hints for UI rendering
- * Matches web MSW fixtures structure
+ *
+ * GH-17: Simplified from GH-16.
+ * Real contract provides only `enabled`; action/labelKey/badgeKey removed.
  */
 export type DisplayBlock = {
   /** Whether the CTA button is active/clickable */
   enabled: boolean;
-  /** Action type for the CTA */
-  action: "JOIN_QUEUE" | "GO_TO_TICKETS" | "NONE";
-  /** i18n key for button label */
-  labelKey: string;
-  /** i18n key for status badge (optional) */
-  badgeKey: string | null;
 };
 
 /**
  * Event domain entity
- * Represents a concert/event with status and queue_state
+ *
+ * GH-17: Evolved for real contract.
+ * - EventStatus removed (not in GET /events list response)
+ * - venue/city merged into location
+ * - saleStartsAt added (optional, for SCHEDULED)
  */
 export type Event = {
   /** Unique event identifier */
@@ -51,18 +57,16 @@ export type Event = {
   name: string;
   /** Event category (e.g., "LIVE MUSIC") */
   category: string;
-  /** Venue name */
-  venue: string;
-  /** City name */
-  city: string;
+  /** Location string (combined venue/city) */
+  location: string;
   /** Event date as ISO string */
   date: string;
   /** Event image URL */
   imageUrl: string;
-  /** Ticket availability status */
-  status: EventStatus;
   /** Queue admission state */
   queueState: QueueState;
   /** Server-computed display hints */
   display: DisplayBlock;
+  /** When sale starts (optional, for SCHEDULED state) */
+  saleStartsAt?: string;
 };

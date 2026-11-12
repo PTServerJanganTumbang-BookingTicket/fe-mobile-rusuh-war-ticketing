@@ -1,7 +1,11 @@
 /**
  * EventCard Render Tests
  *
- * GH-16: Verify EventCard renders all required fields and states correctly.
+ * GH-17: Verify EventCard renders all 5 queue states correctly.
+ * Evolution from GH-16:
+ * - 5 queue states instead of 4
+ * - No status badge (EventStatus removed)
+ * - CTA label derived from queueState, not display.action
  */
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
@@ -13,17 +17,12 @@ describe("EventCard", () => {
     id: "evt_test",
     name: "Test Concert",
     category: "LIVE MUSIC",
-    venue: "Test Venue",
-    city: "Jakarta",
+    location: "Test Venue, Jakarta", // GH-17: merged venue/city
     date: "2026-12-25",
     imageUrl: "/images/test.webp",
-    status: "AVAILABLE",
     queueState: "OPEN",
     display: {
       enabled: true,
-      action: "JOIN_QUEUE",
-      labelKey: "join_queue",
-      badgeKey: null,
     },
   };
 
@@ -38,7 +37,7 @@ describe("EventCard", () => {
       expect(result.getByText("LIVE MUSIC")).toBeTruthy();
     });
 
-    it("should render venue and city", async () => {
+    it("should render location (GH-17: merged venue/city)", async () => {
       const result = await render(<EventCard event={baseEvent} />);
       expect(result.getByText("Test Venue, Jakarta")).toBeTruthy();
     });
@@ -55,48 +54,60 @@ describe("EventCard", () => {
     });
   });
 
-  describe("Status badge", () => {
-    it('should display "Available" for AVAILABLE status', async () => {
-      const result = await render(<EventCard event={baseEvent} />);
-      expect(result.getByText("Available")).toBeTruthy();
-    });
-
-    it('should display "Selling Out Fast" for SELLING_OUT_FAST status', async () => {
-      const event: Event = { ...baseEvent, status: "SELLING_OUT_FAST" };
-      const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Selling Out Fast")).toBeTruthy();
-    });
-
-    it('should display "Sold Out" for SOLD_OUT status', async () => {
-      const event: Event = { ...baseEvent, status: "SOLD_OUT" };
-      const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Sold Out")).toBeTruthy();
-    });
-  });
-
-  describe("Queue state indicator", () => {
-    it('should display "Coming Soon" for NOT_OPEN queue state', async () => {
-      const event: Event = { ...baseEvent, queueState: "NOT_OPEN" };
+  describe("Queue state indicator (GH-17: 5 states)", () => {
+    // RT-EVT17-01: SCHEDULED renders
+    it('should display "Coming Soon" for SCHEDULED queue state', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "SCHEDULED",
+        display: { enabled: false },
+      };
       const result = await render(<EventCard event={event} />);
       expect(result.getByText("Coming Soon")).toBeTruthy();
     });
 
-    it('should display "Direct Purchase" for DIRECT queue state', async () => {
-      const event: Event = { ...baseEvent, queueState: "DIRECT" };
+    // RT-EVT17-02: OPEN renders
+    it('should display "Queue Open" for OPEN queue state', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "OPEN",
+        display: { enabled: true },
+      };
       const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Direct Purchase")).toBeTruthy();
+      expect(result.getByText("Queue Open")).toBeTruthy();
     });
 
-    it('should display "Open" for OPEN queue state', async () => {
-      const event: Event = { ...baseEvent, queueState: "OPEN" };
-      const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Open")).toBeTruthy();
-    });
-
-    it('should display "Queue Full" for FULL queue state', async () => {
-      const event: Event = { ...baseEvent, queueState: "FULL" };
+    // RT-EVT17-03: FULL_QUEUE renders
+    it('should display "Queue Full" for FULL_QUEUE queue state', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "FULL_QUEUE",
+        display: { enabled: false },
+      };
       const result = await render(<EventCard event={event} />);
       expect(result.getByText("Queue Full")).toBeTruthy();
+    });
+
+    // RT-EVT17-04: FULL_BOOKED renders
+    it('should display "Full" for FULL_BOOKED queue state', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "FULL_BOOKED",
+        display: { enabled: true }, // R7-AC2: FULL_BOOKED has enabled=true
+      };
+      const result = await render(<EventCard event={event} />);
+      expect(result.getByText("Full")).toBeTruthy();
+    });
+
+    // RT-EVT17-05: CLOSED renders
+    it('should display "Closed" for CLOSED queue state', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "CLOSED",
+        display: { enabled: false },
+      };
+      const result = await render(<EventCard event={event} />);
+      expect(result.getByText("Closed")).toBeTruthy();
     });
   });
 
@@ -110,31 +121,37 @@ describe("EventCard", () => {
     it("should be disabled when display.enabled is false", async () => {
       const event: Event = {
         ...baseEvent,
-        display: { ...baseEvent.display, enabled: false },
+        display: { enabled: false },
       };
       const result = await render(<EventCard event={event} />);
       // Check the button text is "Unavailable" (disabled state)
       expect(result.getByText("Unavailable")).toBeTruthy();
     });
 
-    it('should display "Join Queue" text for JOIN_QUEUE action', async () => {
-      const result = await render(<EventCard event={baseEvent} />);
+    it('should display "Join Queue" for OPEN with enabled=true', async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "OPEN",
+        display: { enabled: true },
+      };
+      const result = await render(<EventCard event={event} />);
       expect(result.getByText("Join Queue")).toBeTruthy();
     });
 
-    it('should display "Buy Tickets" for GO_TO_TICKETS action', async () => {
+    it('should display "Notify Me" for FULL_BOOKED with enabled=true', async () => {
       const event: Event = {
         ...baseEvent,
-        display: { ...baseEvent.display, action: "GO_TO_TICKETS" },
+        queueState: "FULL_BOOKED",
+        display: { enabled: true },
       };
       const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Buy Tickets")).toBeTruthy();
+      expect(result.getByText("Notify Me")).toBeTruthy();
     });
 
     it('should display "Unavailable" when disabled', async () => {
       const event: Event = {
         ...baseEvent,
-        display: { ...baseEvent.display, enabled: false },
+        display: { enabled: false },
       };
       const result = await render(<EventCard event={event} />);
       expect(result.getByText("Unavailable")).toBeTruthy();
@@ -154,7 +171,7 @@ describe("EventCard", () => {
       const onPress = jest.fn();
       const event: Event = {
         ...baseEvent,
-        display: { ...baseEvent.display, enabled: false },
+        display: { enabled: false },
       };
       const result = await render(
         <EventCard event={event} onPress={onPress} />
@@ -177,6 +194,24 @@ describe("EventCard", () => {
       const result = await render(<EventCard event={event} />);
       // Should still render with placeholder
       expect(result.getByLabelText("Image for Test Concert")).toBeTruthy();
+    });
+  });
+
+  describe("FULL_BOOKED enabled=true (R7-AC2)", () => {
+    it("should have CTA button enabled for FULL_BOOKED state", async () => {
+      const event: Event = {
+        ...baseEvent,
+        queueState: "FULL_BOOKED",
+        display: { enabled: true },
+      };
+      const onPress = jest.fn();
+      const result = await render(
+        <EventCard event={event} onPress={onPress} />
+      );
+
+      // CTA should be clickable
+      fireEvent.press(result.getByText("Notify Me"));
+      expect(onPress).toHaveBeenCalledTimes(1);
     });
   });
 });

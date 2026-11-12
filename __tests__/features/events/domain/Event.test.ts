@@ -1,106 +1,131 @@
 /**
  * Event Domain Type Tests
  *
- * GH-16: Verify Event types match canonical contract schema.
+ * GH-17: Verify evolved Event types match real contract.
+ * Evolution from GH-16:
+ * - QueueState: 4 → 5 values
+ * - EventStatus: Removed
+ * - DisplayBlock: Simplified (enabled only)
  */
-import type {
-  Event,
-  EventStatus,
-  QueueState,
-  DisplayBlock,
-} from "@/features/events/domain";
+import type { Event, QueueState, DisplayBlock } from "@/features/events/domain";
 
 describe("Event Domain Types", () => {
-  describe("EventStatus", () => {
-    it("should accept all valid EventStatus values", () => {
-      const statuses: EventStatus[] = [
-        "AVAILABLE",
-        "SELLING_OUT_FAST",
-        "SOLD_OUT",
-      ];
-      expect(statuses).toHaveLength(3);
-      statuses.forEach((status) => {
-        expect(typeof status).toBe("string");
-      });
-    });
-  });
-
   describe("QueueState", () => {
-    it("should accept all valid QueueState values", () => {
-      const states: QueueState[] = ["NOT_OPEN", "DIRECT", "OPEN", "FULL"];
-      expect(states).toHaveLength(4);
+    it("should accept all 5 valid QueueState values", () => {
+      // GH-17: 5 states (SCHEDULED, OPEN, FULL_QUEUE, FULL_BOOKED, CLOSED)
+      const states: QueueState[] = [
+        "SCHEDULED",
+        "OPEN",
+        "FULL_QUEUE",
+        "FULL_BOOKED",
+        "CLOSED",
+      ];
+      expect(states).toHaveLength(5);
       states.forEach((state) => {
         expect(typeof state).toBe("string");
       });
     });
+
+    it("should not include removed DIRECT state", () => {
+      // GH-17: DIRECT is removed per ADR-006 v2.12
+      const states: QueueState[] = [
+        "SCHEDULED",
+        "OPEN",
+        "FULL_QUEUE",
+        "FULL_BOOKED",
+        "CLOSED",
+      ];
+      expect(states).not.toContain("DIRECT");
+      expect(states).not.toContain("NOT_OPEN");
+      expect(states).not.toContain("FULL");
+    });
   });
 
   describe("DisplayBlock", () => {
-    it("should have correct structure", () => {
+    it("should have only enabled field (simplified from GH-16)", () => {
+      // GH-17: Simplified - only enabled, no action/labelKey/badgeKey
       const display: DisplayBlock = {
         enabled: true,
-        action: "JOIN_QUEUE",
-        labelKey: "join_queue",
-        badgeKey: null,
       };
 
       expect(display.enabled).toBe(true);
-      expect(display.action).toBe("JOIN_QUEUE");
-      expect(display.labelKey).toBe("join_queue");
-      expect(display.badgeKey).toBeNull();
+      // GH-17: These fields no longer exist
+      expect((display as Record<string, unknown>).action).toBeUndefined();
+      expect((display as Record<string, unknown>).labelKey).toBeUndefined();
+      expect((display as Record<string, unknown>).badgeKey).toBeUndefined();
     });
 
-    it("should accept all valid action values", () => {
-      const actions: DisplayBlock["action"][] = [
-        "JOIN_QUEUE",
-        "GO_TO_TICKETS",
-        "NONE",
-      ];
-      expect(actions).toHaveLength(3);
-    });
-
-    it("should accept string badgeKey", () => {
+    it("should accept enabled=false", () => {
       const display: DisplayBlock = {
         enabled: false,
-        action: "NONE",
-        labelKey: "sold_out",
-        badgeKey: "sold_out",
       };
 
-      expect(display.badgeKey).toBe("sold_out");
+      expect(display.enabled).toBe(false);
     });
   });
 
   describe("Event", () => {
-    it("should have all required fields matching contract", () => {
+    it("should have all required fields matching GH-17 contract", () => {
       const event: Event = {
         id: "evt_test",
         name: "Test Event",
         category: "LIVE MUSIC",
-        venue: "Test Venue",
-        city: "Jakarta",
+        location: "Test Venue, Jakarta", // GH-17: merged venue/city
         date: "2026-12-25",
         imageUrl: "/images/test.webp",
-        status: "AVAILABLE",
         queueState: "OPEN",
         display: {
           enabled: true,
-          action: "JOIN_QUEUE",
-          labelKey: "join_queue",
-          badgeKey: null,
         },
       };
 
       expect(event.id).toBe("evt_test");
       expect(event.name).toBe("Test Event");
       expect(event.category).toBe("LIVE MUSIC");
-      expect(event.venue).toBe("Test Venue");
-      expect(event.city).toBe("Jakarta");
+      expect(event.location).toBe("Test Venue, Jakarta");
       expect(event.date).toBe("2026-12-25");
       expect(event.imageUrl).toBe("/images/test.webp");
-      expect(event.status).toBe("AVAILABLE");
       expect(event.queueState).toBe("OPEN");
       expect(event.display).toBeDefined();
+      expect(event.display.enabled).toBe(true);
+    });
+
+    it("should accept optional saleStartsAt field", () => {
+      const event: Event = {
+        id: "evt_test",
+        name: "Test Event",
+        category: "LIVE MUSIC",
+        location: "Test Venue, Jakarta",
+        date: "2026-12-25",
+        imageUrl: "/images/test.webp",
+        queueState: "SCHEDULED",
+        display: {
+          enabled: false,
+        },
+        saleStartsAt: "2026-12-20T10:00:00Z",
+      };
+
+      expect(event.saleStartsAt).toBe("2026-12-20T10:00:00Z");
+    });
+
+    it("should not have removed fields (status, venue, city)", () => {
+      const event: Event = {
+        id: "evt_test",
+        name: "Test Event",
+        category: "LIVE MUSIC",
+        location: "Test Venue, Jakarta",
+        date: "2026-12-25",
+        imageUrl: "/images/test.webp",
+        queueState: "OPEN",
+        display: {
+          enabled: true,
+        },
+      };
+
+      // GH-17: These fields no longer exist
+      expect((event as Record<string, unknown>).status).toBeUndefined();
+      expect((event as Record<string, unknown>).venue).toBeUndefined();
+      expect((event as Record<string, unknown>).city).toBeUndefined();
     });
   });
 });
