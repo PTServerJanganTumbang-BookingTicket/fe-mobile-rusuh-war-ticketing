@@ -9,6 +9,10 @@
 export type { EventDTO, EventsResponseDTO, ValidQueueState } from "./dto";
 export { VALID_QUEUE_STATES, isValidQueueState } from "./dto";
 
+// Mappers (GH-17: DTO to domain mapping)
+export type { EventDTOValidationResult } from "./mappers";
+export { mapEventDTO, mapEventDTOs } from "./mappers";
+
 // Data sources
 export { FakeEventDataSource } from "./FakeEventDataSource";
 export type { FakeEventDataSourceConfig } from "./FakeEventDataSource";
