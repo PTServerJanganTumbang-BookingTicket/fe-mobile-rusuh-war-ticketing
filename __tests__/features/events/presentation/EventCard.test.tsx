@@ -89,14 +89,14 @@ describe("EventCard", () => {
     });
 
     // RT-EVT17-04: FULL_BOOKED renders
-    it('should display "Full (May Return)" for FULL_BOOKED queue state', async () => {
+    it('should display "Full" for FULL_BOOKED queue state', async () => {
       const event: Event = {
         ...baseEvent,
         queueState: "FULL_BOOKED",
         display: { enabled: true }, // R7-AC2: FULL_BOOKED has enabled=true
       };
       const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Full (May Return)")).toBeTruthy();
+      expect(result.getByText("Full")).toBeTruthy();
     });
 
     // RT-EVT17-05: CLOSED renders

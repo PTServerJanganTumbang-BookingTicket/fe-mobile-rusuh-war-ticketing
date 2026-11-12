@@ -25,7 +25,7 @@ const QUEUE_STATE_LABELS: Record<Event["queueState"], string> = {
   SCHEDULED: "Coming Soon",
   OPEN: "Queue Open",
   FULL_QUEUE: "Queue Full",
-  FULL_BOOKED: "Full (May Return)", // PRODUCT_COPY_CONFIRMATION_REQUIRED
+  FULL_BOOKED: "Full", // PRODUCT_COPY_REQUIRED: neutral label pending final copy
   CLOSED: "Closed",
 };
 
