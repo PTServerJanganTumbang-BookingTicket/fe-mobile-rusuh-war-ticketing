@@ -9,10 +9,17 @@ export default function HomeScreen() {
       </Text>
       <Text className="mt-2 text-gray-600">Welcome to the mobile app</Text>
 
+      {/* GH-16: Events Home Screen */}
+      <Link href="/events" asChild>
+        <Pressable className="mt-8 rounded-lg bg-blue-500 px-6 py-3">
+          <Text className="font-semibold text-white">Browse Events</Text>
+        </Pressable>
+      </Link>
+
       {/* GH-3 Verification Infrastructure — Remove after merge */}
       <Link href="/__signal-ui-verify" asChild>
-        <Pressable className="mt-8 rounded-lg bg-blue-500 px-6 py-3">
-          <Text className="font-semibold text-white">Signal UI Verify</Text>
+        <Pressable className="mt-4 rounded-lg bg-gray-200 px-6 py-3">
+          <Text className="font-semibold text-gray-700">Signal UI Verify</Text>
         </Pressable>
       </Link>
     </View>

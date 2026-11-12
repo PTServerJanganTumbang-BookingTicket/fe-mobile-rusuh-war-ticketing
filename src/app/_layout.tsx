@@ -36,6 +36,13 @@ export default function RootLayout() {
     <>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="events"
+          options={{
+            title: "Events",
+            headerShown: true,
+          }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </>
