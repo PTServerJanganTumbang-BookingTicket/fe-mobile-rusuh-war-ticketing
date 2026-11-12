@@ -8,6 +8,15 @@
  * - No authentication required
  * - Query: limit (default 10, max 50), offset (default 0)
  * - NO filter parameter (backend ignores it)
+ *
+ * Error Handling (T4):
+ * - 400 VALIDATION_ERROR: Bad request, user may retry
+ * - 503 INTERNAL_ERROR: Service unavailable, retryable
+ * - NETWORK_ERROR: Timeout or connectivity issue, retryable
+ * - PARSE_ERROR: Malformed JSON or unexpected structure
+ * - CONTRACT_DRIFT: Unknown enum values (handled by mapper)
+ *
+ * @see R13-R16, R21 for error handling requirements
  */
 
 import type { Event } from "../domain";
