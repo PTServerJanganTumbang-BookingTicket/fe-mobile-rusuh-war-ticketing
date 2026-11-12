@@ -35,12 +35,12 @@ src/
 
 ## 3. Layer Dependency Rules
 
-| Layer | Can Import | Cannot Import |
-|-------|------------|---------------|
-| `domain/` | TypeScript only, `core/domain` | React, React Native, external libs, data, presentation |
-| `data/` | `domain`, `core/domain`, external libs | React, presentation |
-| `presentation/` | `domain`, `data`, React, React Native | Other features (except via `index.ts`) |
-| `app/` | Feature public APIs via `index.ts`, `core/*` | Feature internals directly |
+| Layer           | Can Import                                   | Cannot Import                                          |
+| --------------- | -------------------------------------------- | ------------------------------------------------------ |
+| `domain/`       | TypeScript only, `core/domain`               | React, React Native, external libs, data, presentation |
+| `data/`         | `domain`, `core/domain`, external libs       | React, presentation                                    |
+| `presentation/` | `domain`, `data`, React, React Native        | Other features (except via `index.ts`)                 |
+| `app/`          | Feature public APIs via `index.ts`, `core/*` | Feature internals directly                             |
 
 **Cross-feature imports:** Only via `features/<x>/index.ts`. Never import from another feature's internal folders.
 
@@ -50,10 +50,10 @@ src/
 
 ### Branch Naming
 
-| Pattern | Use |
-|---------|-----|
-| `story/GH-<n>-<slug>` | Feature work |
-| `fix/GH-<n>-<slug>` | Bug fixes |
+| Pattern               | Use                  |
+| --------------------- | -------------------- |
+| `story/GH-<n>-<slug>` | Feature work         |
+| `fix/GH-<n>-<slug>`   | Bug fixes            |
 | `chore/GH-<n>-<slug>` | Maintenance, tooling |
 
 Branches live max 1 day. Use feature flags for incomplete work.
@@ -67,6 +67,7 @@ Branches live max 1 day. Use feature flags for incomplete work.
 **Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 
 **Examples:**
+
 - `[GH-3][Rosyid] feat(auth): add magic link request`
 - `[GH-2][Rosyid] chore(tooling): add ESLint configuration`
 
@@ -75,6 +76,20 @@ Agents may add a `Co-authored-by:` trailer; the Actor stays Rosyid.
 ### Protected Branch
 
 `main` is protected. Never push directly to main. Create a branch and open a PR.
+
+### Issue Verification Checkboxes
+
+GitHub issues may contain task-list checkboxes (e.g., "Verification gate" sections). Before closing a ticket or merging its PR:
+
+1. Read the issue body and identify all `- [ ]` checkbox items
+2. Verify each checkbox item against the implementation
+3. Update the issue body to check off verified items (`- [x]`)
+4. Leave a checkbox unchecked if verification fails or supporting evidence is insufficient
+5. Do NOT close or merge with unchecked verification checkboxes
+
+Never check an item solely to unblock merge or ticket closure.
+
+Use `gh issue edit <n> --body '...'` to update checkboxes.
 
 ---
 
@@ -135,15 +150,15 @@ Any bypass of pre-commit, commit-msg, or pre-push hooks requires Rosyid's explic
 
 Context files in `.kiro/steering/`:
 
-| File | Inclusion | Purpose |
-|------|-----------|---------|
-| `product.md` | always | Product context |
-| `tech.md` | always | Tech stack |
-| `structure.md` | always | Folder structure |
-| `git-workflow.md` | always | Branch/commit rules |
-| `spec-workflow.md` | always | Spec creation process |
-| `architecture-boundaries.md` | fileMatch `src/**` | Layer rules (loads when editing src/) |
-| `testing-tdd.md` | fileMatch test files | Testing patterns |
-| `release-train.md` | manual | Release process |
+| File                         | Inclusion            | Purpose                               |
+| ---------------------------- | -------------------- | ------------------------------------- |
+| `product.md`                 | always               | Product context                       |
+| `tech.md`                    | always               | Tech stack                            |
+| `structure.md`               | always               | Folder structure                      |
+| `git-workflow.md`            | always               | Branch/commit rules                   |
+| `spec-workflow.md`           | always               | Spec creation process                 |
+| `architecture-boundaries.md` | fileMatch `src/**`   | Layer rules (loads when editing src/) |
+| `testing-tdd.md`             | fileMatch test files | Testing patterns                      |
+| `release-train.md`           | manual               | Release process                       |
 
 Steering files reference this document; they do not duplicate it.
