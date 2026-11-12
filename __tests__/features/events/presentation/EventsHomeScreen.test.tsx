@@ -33,6 +33,54 @@ describe("EventsHomeScreen", () => {
     },
   });
 
+  // RT-EVT17-06: Mixed states list (GH-17)
+  describe("GH-17 Render Tests", () => {
+    it("RT-EVT17-06: should render mixed queue states list", async () => {
+      const repository = createMockRepository({ events: FAKE_EVENTS });
+
+      let result: Awaited<ReturnType<typeof render>>;
+      await act(async () => {
+        result = await render(<EventsHomeScreen repository={repository} />);
+      });
+
+      await waitFor(() => {
+        // All 5 queue state events should be visible
+        expect(result!.getByText("Konser A")).toBeTruthy(); // SCHEDULED
+        expect(result!.getByText("Konser B")).toBeTruthy(); // OPEN
+        expect(result!.getByText("Konser C")).toBeTruthy(); // FULL_QUEUE
+        expect(result!.getByText("Konser D")).toBeTruthy(); // FULL_BOOKED
+        expect(result!.getByText("Konser E")).toBeTruthy(); // CLOSED
+      });
+    });
+
+    it("RT-EVT17-07: should render EmptyState when no events", async () => {
+      const repository = createMockRepository({ events: [] });
+
+      let result: Awaited<ReturnType<typeof render>>;
+      await act(async () => {
+        result = await render(<EventsHomeScreen repository={repository} />);
+      });
+
+      await waitFor(() => {
+        expect(result!.getByText("No Events Available")).toBeTruthy();
+      });
+    });
+
+    it("RT-EVT17-08: should render EventList (GH-16 regression)", async () => {
+      const repository = createMockRepository({ events: FAKE_EVENTS });
+
+      let result: Awaited<ReturnType<typeof render>>;
+      await act(async () => {
+        result = await render(<EventsHomeScreen repository={repository} />);
+      });
+
+      await waitFor(() => {
+        // List should render without error - core GH-16 regression test
+        expect(result!.getByText("Konser A")).toBeTruthy();
+      });
+    });
+  });
+
   describe("Loading state", () => {
     it("should render loading state initially", async () => {
       const repository = createMockRepository({
