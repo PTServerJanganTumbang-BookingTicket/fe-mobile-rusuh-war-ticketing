@@ -12,7 +12,7 @@ describe("eventMapper", () => {
     id: "evt_test",
     name: "Test Event",
     category: "LIVE MUSIC",
-    location: "Test Venue, Jakarta",
+    location: { venue: "Test Venue", city: "Jakarta" },
     date: "2026-12-25",
     image_url: "/images/test.webp",
     queue_state: "OPEN",
@@ -160,6 +160,32 @@ describe("eventMapper", () => {
         expect(result.event.queueState).toBe("OPEN");
       }
     });
+
+    // Contract v2.27: location is { venue, city }
+    it("should map location object to combined 'venue, city' string", () => {
+      const result = mapEventDTO(baseDTO);
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(result.event.location).toBe("Test Venue, Jakarta");
+      }
+    });
+
+    it("should map location with multi-word venue and city", () => {
+      const dto: EventDTO = {
+        ...baseDTO,
+        location: {
+          venue: "Istora Gelora Bung Karno, Senayan",
+          city: "Jakarta",
+        },
+      };
+      const result = mapEventDTO(dto);
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(result.event.location).toBe(
+          "Istora Gelora Bung Karno, Senayan, Jakarta"
+        );
+      }
+    });
   });
 
   describe("mapEventDTO - Validation Failures", () => {
@@ -188,6 +214,52 @@ describe("eventMapper", () => {
 
     it("should reject old queue_state FULL (no silent fallback)", () => {
       const dto: EventDTO = { ...baseDTO, queue_state: "FULL" };
+      const result = mapEventDTO(dto);
+      expect(result.valid).toBe(false);
+    });
+
+    // Contract v2.27: location must be an object with venue + city
+    it("should reject location as flat string (old contract v2.12 shape)", () => {
+      const dto = {
+        ...baseDTO,
+        location: "Test Venue, Jakarta",
+      } as unknown as EventDTO;
+      const result = mapEventDTO(dto);
+      expect(result.valid).toBe(false);
+      if (!result.valid) {
+        expect(result.error).toContain("Invalid location");
+      }
+    });
+
+    it("should reject location missing venue", () => {
+      const dto = {
+        ...baseDTO,
+        location: { city: "Jakarta" },
+      } as unknown as EventDTO;
+      const result = mapEventDTO(dto);
+      expect(result.valid).toBe(false);
+      if (!result.valid) {
+        expect(result.error).toContain("missing venue");
+      }
+    });
+
+    it("should reject location missing city", () => {
+      const dto = {
+        ...baseDTO,
+        location: { venue: "Test Venue" },
+      } as unknown as EventDTO;
+      const result = mapEventDTO(dto);
+      expect(result.valid).toBe(false);
+      if (!result.valid) {
+        expect(result.error).toContain("missing city");
+      }
+    });
+
+    it("should reject location with empty venue", () => {
+      const dto = {
+        ...baseDTO,
+        location: { venue: "  ", city: "Jakarta" },
+      } as unknown as EventDTO;
       const result = mapEventDTO(dto);
       expect(result.valid).toBe(false);
     });

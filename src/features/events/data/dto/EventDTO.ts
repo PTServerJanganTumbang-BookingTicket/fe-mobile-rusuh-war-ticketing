@@ -2,14 +2,17 @@
  * EventDTO Schema
  *
  * GH-17: Raw API response types for GET /events endpoint.
- * Uses snake_case matching server contract (sjtrbt20261112.openapi.json).
+ * Uses snake_case matching server contract.
+ * Updated for contract v2.27 (deployed backend):
+ * - `data` is the event array directly (no `items` wrapper)
+ * - `location` is an object `{ venue, city }` (was a flat string in v2.12)
  *
  * DTOs stay in data layer — presentation imports only domain Event.
  */
 
 /**
  * Valid queue_state values from real contract
- * @see sjtrbt20261112.openapi.json GET /events
+ * @see GET /events (deployed backend, contract v2.27)
  */
 export const VALID_QUEUE_STATES = [
   "SCHEDULED",
@@ -31,8 +34,18 @@ export function isValidQueueState(value: string): value is ValidQueueState {
 }
 
 /**
+ * Raw API event location (snake_case object, contract v2.27)
+ */
+export type EventLocationDTO = {
+  /** Venue name and address (e.g. "Istora Gelora Bung Karno, Senayan") */
+  venue: string;
+  /** City name (e.g. "Jakarta") */
+  city: string;
+};
+
+/**
  * Raw API event structure (snake_case)
- * Matches GET /events response item schema
+ * Matches GET /events response item schema (contract v2.27)
  */
 export type EventDTO = {
   /** Unique event identifier */
@@ -41,8 +54,8 @@ export type EventDTO = {
   name: string;
   /** Event category (e.g., "LIVE MUSIC") */
   category: string;
-  /** Location string */
-  location: string;
+  /** Event location (object with venue + city, contract v2.27) */
+  location: EventLocationDTO;
   /** Event date as ISO string */
   date: string;
   /** Event image URL (snake_case from server) */
@@ -59,16 +72,25 @@ export type EventDTO = {
 };
 
 /**
- * GET /events response envelope
- * Matches API response structure
+ * Response meta (contract v2.27)
  */
-export type EventsResponseDTO = {
-  data: {
-    items: EventDTO[];
-  };
-  meta?: {
-    total?: number;
+export type EventsResponseMetaDTO = {
+  code?: number;
+  message?: string;
+  pagination?: {
+    totalData?: number;
+    totalPage?: number;
     limit?: number;
     offset?: number;
   };
+  server_time?: string;
+};
+
+/**
+ * GET /events response envelope (contract v2.27)
+ * `data` is the event array directly (no `items` wrapper)
+ */
+export type EventsResponseDTO = {
+  data: EventDTO[];
+  meta?: EventsResponseMetaDTO;
 };
