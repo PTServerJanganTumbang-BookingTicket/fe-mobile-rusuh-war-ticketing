@@ -62,3 +62,8 @@
   (`curl -H 'expo-platform: ios' http://localhost:8081/`). With the param: 2886-module
   bundle with all app code; `expo export` .hbc also verified. metro.config.js (GH-3
   resolver) NOT at fault; no code changes needed.
+- 2026-11-13 (Cline): batches shipped as PRs — tickets GH-64/65/66 created (project
+  #2, In review); PR #67 (UI alignment), PR #68 (v2.27 adapter), PR #69 (app-shell
+  wiring, STACKED on the GH-65 branch — merge #68 first, #69 auto-retargets to main).
+  GH-55 commented with partial progress, left open. Local 4-gate verification green
+  per branch; CI pending on all three.

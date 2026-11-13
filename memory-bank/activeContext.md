@@ -5,8 +5,18 @@
 
 ## Current work
 
-- **SESSION HANDOFF (2026-11-13, Cline session ended mid-debugging — read this first)**:
-  Three uncommitted batches on main working tree (30 files, see `git status`):
+- **SESSION STATE (2026-11-13, Cline — shipped as PRs, awaiting Rosyid's merge)**:
+  The three batches are committed on feature branches and pushed; tickets
+  GH-64/65/66 created (project #2, status In review):
+  - PR #67 `story/GH-64-web-ui-alignment` → main (UI alignment; also documents
+    partial GH-55 progress — GH-55 stays OPEN: separator, Indonesian labels,
+    ANTREAN AKTIF badge remain)
+  - PR #68 `story/GH-65-real-events-v227` → main (v2.27 adapter + HttpEventRepository)
+  - PR #69 `story/GH-66-app-shell-wiring` → **stacked on the GH-65 branch**
+    (app shell + SafeArea + memory-bank) — MERGE #68 FIRST; GitHub auto-retargets
+    #69 to main when the base branch is deleted (deleteBranchOnMerge=true).
+    #67 is independent (any order). Local 4-gate verification green per branch;
+    CI pending. Batch contents:
   1. **Web-UI alignment** — EventCard (badge overlay w/ Signal tones, red meta row,
      full-width CTA, 4:3 img), EventsHomeScreen section header, brand-red
      loading/error/home CTA, QueuedView red position number (GH-55 intent).
@@ -103,11 +113,12 @@
 
 ## Next steps
 
-1. Human verifies end-to-end in Expo Go at `exp://172.20.10.11:8081`: home shows
-   real events with real images; tap Join Queue → Waiting Room with live position
-   (position = ticket_no − now_serving via /queue/me polling; guest X-Device-Id +
-   dummy captcha token).
-2. Rosyid reviews/commits the three uncommitted batches (natural split: UI alignment /
-   GH-17 adapter / home+queue+safearea wiring). Gates green 2026-11-13: lint,
-   typecheck, test (1013 pass / 65 suites), boundary-check, expo export.
-3. Spec + implement remaining P0 tickets GH-54, GH-56, GH-57 (GH-55 likely covered).
+1. Rosyid merges on GitHub: **#68 (adapter) before #69 (wiring, stacked)**; #67
+   (UI) any order. Each PR closes its ticket (#64/#65/#66).
+2. After merge: `git checkout main && git pull --ff-only`, then verify end-to-end
+   in Expo Go at `exp://172.20.10.11:8081` — home shows real events with real
+   images; tap Join Queue → Waiting Room with live position (position =
+   ticket_no − now_serving via /queue/me polling; guest X-Device-Id + dummy
+   captcha token).
+3. Spec + implement remaining P0 tickets GH-54, GH-56, GH-57 (GH-55 stays open:
+   only position styling done via #67 — separator, Indonesian labels, badge remain).
