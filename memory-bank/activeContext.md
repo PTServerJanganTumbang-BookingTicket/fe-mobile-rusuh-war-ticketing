@@ -5,37 +5,66 @@
 
 ## Current work
 
-- **SESSION STATE (2026-11-13, Cline — shipped as PRs, awaiting Rosyid's merge)**:
-  The three batches are committed on feature branches and pushed; tickets
-  GH-64/65/66 created (project #2, status In review):
-  - PR #67 `story/GH-64-web-ui-alignment` → main (UI alignment; also documents
-    partial GH-55 progress — GH-55 stays OPEN: separator, Indonesian labels,
-    ANTREAN AKTIF badge remain)
-  - PR #68 `story/GH-65-real-events-v227` → main (v2.27 adapter + HttpEventRepository)
-  - PR #69 `story/GH-66-app-shell-wiring` → **stacked on the GH-65 branch**
-    (app shell + SafeArea + memory-bank) — MERGE #68 FIRST; GitHub auto-retargets
-    #69 to main when the base branch is deleted (deleteBranchOnMerge=true).
-    #67 is independent (any order). Local 4-gate verification green per branch;
-    CI pending. Batch contents:
-  1. **Web-UI alignment** — EventCard (badge overlay w/ Signal tones, red meta row,
-     full-width CTA, 4:3 img), EventsHomeScreen section header, brand-red
-     loading/error/home CTA, QueuedView red position number (GH-55 intent).
-  2. **GH-17 real events adapter (contract v2.12→v2.27)** — envelope `data` direct
-     array + `location {venue,city}`; `RealEventDataSource.getEvent` (GET /events/{id});
-     new `HttpEventRepository`; env-var wiring (`EXPO_PUBLIC_API_BASE_URL`).
-  3. **Home/Queue/SafeArea wiring** — `src/app/index.tsx` IS the events home now
-     (`src/app/events.tsx` + `__signal-ui-verify.tsx` DELETED); new route
-     `src/app/queue/[eventId].tsx` (guest deviceId + dummy captcha token, real
-     `useRealQueue` or fake scenario fallback); `_layout.tsx` uses
-     SafeAreaProvider + SafeAreaView(top); WaitingRoom/TicketSelection screens use
-     react-native-safe-area-context (edges bottom); new hook
-     `src/features/queue/presentation/hooks/useRealQueue.ts` (INJECTION-based
-     `dataSource` + `pollMe` — boundary rule forbids presentation→data imports);
-     `QueueHttpClient.getMe` gained optional `authContext` (deployed v2.27 requires
-     X-Device-Id for guest /me — verified by curl); `QueueMeResponseDto` gained
-     `ticket_no`/`now_serving` (position = ticket_no − now_serving); queue feature
-     barrels now export `useRealQueue`/`RealQueueDataSource`/`QueueHttpClient`.
-  - Gates for all three: lint ✅ typecheck ✅ boundary-check ✅ tests 1013/65 suites ✅.
+- **SESSION STATE (2026-11-13 ~16:20, Cline — queue-flow REVIEW session: findings
+  reported to Rosyid, NO code changes made)**: PRs #67/#68/#69 are ALL MERGED;
+  repo is on `main` @ `4a162f4` (ff-pulled, clean tree). `npm test` on main:
+  65/65 suites, 1013 pass + 3 skip (lint/typecheck/boundary not re-run this
+  session). Dev server restarted 16:13 with
+  `EXPO_PUBLIC_API_BASE_URL` (Metro had a corrupt module graph after the
+  story-branch → main switch: phone crashed repeatedly with
+  `TypeError: undefined cannot be used as a constructor` at `index.tsx:26`
+  `new HttpEventRepository`; fresh post-restart bundle verified sound — class
+  - app markers present → transient Metro state, NOT a code bug; phone needs
+    a manual reload in Expo Go).
+- **HEADLINE REVIEW FINDING — the real queue flow is broken against deployed
+  v2.27**: `POST /events/{id}/queue/join` and `GET /queue/me` return ENVELOPED
+  responses `{data:{...},meta:{...}}`, while `isQueueJoinResponse`/
+  `isQueueMeResponse` check TOP-LEVEL fields → join returns `ok:false`
+  (UNKNOWN_ERROR "HTTP 200 error"), queueToken stays null, and on Hermes the
+  SSE-fallback in `useRealQueue` CLEARS that error and starts a poll loop that
+  no-ops on the null token → Waiting Room shows "#0 / 0 min / 0%" forever.
+  Live-curl evidence: join 200 `{data:{ticket_no,now_serving,position,
+queue_token,sse_url,event},meta:{server_time,...}}`; /me QUEUED
+  `{data:{state,ticket_no,now_serving},meta:{server_time}}`; /me GRANTED adds
+  `grant_token`+`booking_expires_at`; /me EXPIRED `{data:{state:"EXPIRED"}}`.
+  Error bodies put `error_code` under `meta` (DEVICE_ID_REQUIRED 400 verified)
+  → all distinct error codes (FULL_QUEUE/FULL_BOOKED/CAPTCHA…) collapse to
+  UNKNOWN_ERROR. GH-9 DT tests passed only because the DT harness unwraps the
+  envelope itself (`rawBody.data || rawBody`) with raw fetch — it never
+  validated `QueueHttpClient`.
+- **Other review findings (full report delivered to Rosyid, 2026-11-13):**
+  1. `joined_at` is absent from join `data` (use `meta.server_time`); `/me`
+     `data` has NO `server_time` and NO `rate_per_min` → poll-path ETA uses
+     the hardcoded default 20/min while the real rate is 2/min (SSE
+     broadcasts `ratePerMin`).
+  2. SSE path unusable on ALL platforms: auth is the `X-Queue-Token` HEADER
+     (query `?token=` → 401 "Token antrian tidak ditemukan"), and payloads are
+     camelCase (`nowServing/state/ratePerMin/serverTime`) vs the parser's
+     snake_case → every event would be silently dropped even with auth fixed.
+     EventSource cannot set headers anyway → polling is the real path (as
+     designed on Hermes).
+  3. `WaitingRoomScreen` never renders `error`/`retry`, and `useRealQueue`'s
+     onError wrapper discards `error.queueState` → FullQueueView/
+     FullBookedView/ClosedView are UNREACHABLE in the real flow (fake
+     scenarios only). FULL_QUEUE (503) vs FULL_BOOKED (409) is modeled
+     correctly in domain/data but never surfaces.
+  4. Guest deviceId is regenerated per mount (`useMemo`); the backend issues a
+     NEW ticket per join (no dedupe by X-Device-Id, no `rejoined` flag, no 409
+     on duplicate join — verified live) → back-nav + re-enter = new identity +
+     new worse ticket; old ticket orphaned (a grant issued while away is
+     lost). Fix requires persisting queueToken + /me-based restore, not just
+     deviceId persistence.
+  5. `useRealQueue` has ZERO tests (no test file imports it). The jest
+     "worker failed to exit gracefully" warning was root-caused with
+     `--detectOpenHandles` to `RealEventDataSource.createTimeoutController`
+     (30s `setTimeout` never cleared — 37 open handles from events tests),
+     NOT to useRealQueue (its own cleanup is correct: clearInterval +
+     dataSource.stop + cancelled flag).
+  6. Minor: polling never stops after GRANTED; EXPIRED (post-grant) would
+     silently revert the UI to QueuedView with a stale position;
+     `fetchGrantMetadata` (SSE GRANTED path) omits authContext → guest /me
+     would 400 DEVICE_ID_REQUIRED; `pollMe` builds a new QueueHttpClient per
+     call (harmless).
 
 - **✅ RESOLVED (2026-11-13) — "dev bundle has no app source" was a FALSE ALARM (bad curl
   methodology, not a code bug)**: The previous session's curl URL was missing
@@ -56,14 +85,20 @@
   were needed. LESSON: never grep a hand-built bundle URL — always use the manifest
   launchAsset URL (it carries the required transform params).
 
-- **Dev server**: running on port 8081 (nohup PID tree, log
-  `/tmp/expo-rusuh-main-8081.log`) WITH
+- **Dev server**: restarted 2026-11-13 ~16:13 (log
+  `/tmp/expo-rusuh-main-8081.log`; old log kept at
+  `/tmp/expo-rusuh-main-8081.old.log`) WITH
   `EXPO_PUBLIC_API_BASE_URL=https://c7s53ojpml.execute-api.ap-southeast-1.amazonaws.com`;
   Expo Go URL `exp://172.20.10.11:8081`. Restart carefully — kill by explicit PIDs
   from `lsof -i :8081`, NOT by `ps | grep expo` (matches your own shell cmd → SIGTERM self).
-  Live API verified by curl: GET /events (5 events, real images), POST join
-  (guest X-Device-Id + dummy captcha works, returns position/ticket_no/sse_url),
-  GET /queue/me needs X-Queue-Token AND X-Device-Id, returns ticket_no/now_serving/state.
+  LESSON (2026-11-13 review): `git checkout` between branches while Metro is running
+  left a corrupt graph (2853-module bundle) and the phone crashed on
+  `new HttpEventRepository` (undefined constructor) — restart Metro after ANY
+  branch switch before trusting on-device results.
+  Live API re-verified by curl (2026-11-13 review): GET /events (5 events);
+  POST join works BUT response is ENVELOPED `{data,meta}` (see headline finding);
+  GET /queue/me needs X-Queue-Token AND X-Device-Id, response ENVELOPED
+  (data: state/ticket_no/now_serving; grant fields only when GRANTED).
   To test the dev bundle by curl, use the MANIFEST launch URL, never a hand-built one:
   `curl -H 'expo-platform: ios' http://localhost:8081/` → copy `launchAsset.url`
   (it includes `transform.routerRoot=src%2Fapp`, which is REQUIRED — a bare URL
@@ -113,12 +148,17 @@
 
 ## Next steps
 
-1. Rosyid merges on GitHub: **#68 (adapter) before #69 (wiring, stacked)**; #67
-   (UI) any order. Each PR closes its ticket (#64/#65/#66).
-2. After merge: `git checkout main && git pull --ff-only`, then verify end-to-end
-   in Expo Go at `exp://172.20.10.11:8081` — home shows real events with real
-   images; tap Join Queue → Waiting Room with live position (position =
-   ticket_no − now_serving via /queue/me polling; guest X-Device-Id + dummy
-   captcha token).
-3. Spec + implement remaining P0 tickets GH-54, GH-56, GH-57 (GH-55 stays open:
-   only position styling done via #67 — separator, Indonesian labels, badge remain).
+1. Rosyid decides on the review findings. P0 fix candidates (in priority order):
+   (a) envelope unwrapping in the queue data layer (join + /me + `meta`
+   error_code) — unblocks the entire real flow; (b) render error/retry in
+   WaitingRoomScreen and surface FULL_QUEUE/FULL_BOOKED/CLOSED from join
+   errors (keep them DISTINCT); (c) ETA rate — source `ratePerMin` from SSE
+   or change the poll default 20 → 2; (d) useRealQueue test coverage.
+2. Approved fixes go through `/ticket-to-spec`; gates: lint, typecheck, test,
+   boundary-check.
+3. E2E in Expo Go after (a): reload Expo Go at `exp://172.20.10.11:8081` —
+   home shows real events → Join Queue → position should now move
+   (ticket_no − now_serving, ~2/min on the test event); back-nav + re-enter
+   will show the new-ticket-per-join behavior documented above.
+4. Remaining P0 tickets GH-54, GH-56, GH-57 (GH-55 stays open: separator,
+   Indonesian labels, badge remain).

@@ -67,3 +67,21 @@
   wiring, STACKED on the GH-65 branch — merge #68 first, #69 auto-retargets to main).
   GH-55 commented with partial progress, left open. Local 4-gate verification green
   per branch; CI pending on all three.
+- 2026-11-13 (Cline, review session — NO code changes): PRs #67/#68/#69 ALL MERGED
+  (main @ 4a162f4); queue-flow review vs deployed v2.27 found the REAL join/me flow
+  broken by response envelopes (DTO guards check top-level fields; backend wraps in
+  {data,meta}; error_code under meta → all distinct codes collapse to UNKNOWN_ERROR)
+  → waiting room shows "#0" forever; GH-9 DT tests never caught it because the DT
+  harness unwraps the envelope itself with raw fetch. Also: SSE auth is the
+  X-Queue-Token header (query ?token= → 401) with camelCase payloads (parser expects
+  snake_case) → SSE path unusable everywhere (polling is the real path on Hermes);
+  /me has no rate_per_min (ETA default 20 vs real 2/min); no error/retry UI —
+  FULL_QUEUE/FULL_BOOKED/Closed views unreachable in the real flow; deviceId
+  regenerated per mount + backend issues a NEW ticket per join (no rejoin
+  semantics — verified live, incl. no 409 on duplicate join); useRealQueue has zero
+  tests; jest "worker failed to exit" warning root-caused via --detectOpenHandles to
+  RealEventDataSource.createTimeoutController (30s setTimeout never cleared → 37
+  open handles) — NOT useRealQueue. npm test on main: 65/65 suites, 1013 pass.
+  Metro was restarted (corrupt graph after branch switch had crashed the phone on
+  new HttpEventRepository — transient, not a code bug). Findings report delivered
+  to Rosyid; awaiting approval for any fixes.
