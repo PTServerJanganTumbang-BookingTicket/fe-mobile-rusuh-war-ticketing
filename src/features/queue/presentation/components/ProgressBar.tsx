@@ -49,7 +49,7 @@ export function ProgressBar({
       accessibilityLabel={accessibilityLabel}
     >
       <View
-        className="h-full rounded-full bg-blue-600"
+        className="h-full rounded-full bg-[#EC1C2E]"
         style={{ width: `${clampedProgress}%` }}
         testID="progress-bar-fill"
       />
