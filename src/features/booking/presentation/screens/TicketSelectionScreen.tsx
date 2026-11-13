@@ -106,9 +106,7 @@ export function TicketSelectionScreen({
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-red-600 text-lg font-semibold mb-2">
-            Error
-          </Text>
+          <Text className="text-red-600 text-lg font-semibold mb-2">Error</Text>
           <Text className="text-gray-700 text-center">{error.message}</Text>
         </View>
       </SafeAreaView>
@@ -123,7 +121,9 @@ export function TicketSelectionScreen({
         {/* Event info */}
         {event && (
           <View className="mb-4">
-            <Text className="text-xl font-bold text-gray-900">{event.name}</Text>
+            <Text className="text-xl font-bold text-gray-900">
+              {event.name}
+            </Text>
             <Text className="text-gray-600">{event.venue}</Text>
           </View>
         )}
