@@ -12,11 +12,11 @@ Display a static "Coming Soon" placeholder screen for e-ticket functionality. Th
 
 ## Glossary
 
-| Term           | Definition                                                  |
-| -------------- | ----------------------------------------------------------- |
-| Placeholder    | Static UI indicating future functionality                   |
-| Signal UI      | Telkomsel design system (Text component qualified via GH-3) |
-| Feature Module | Clean Architecture bounded context under `src/features/`    |
+| Term           | Definition                                               |
+| -------------- | -------------------------------------------------------- |
+| Placeholder    | Static UI indicating future functionality                |
+| Signal UI      | Design system (Text component qualified via GH-3)        |
+| Feature Module | Clean Architecture bounded context under `src/features/` |
 
 ---
 

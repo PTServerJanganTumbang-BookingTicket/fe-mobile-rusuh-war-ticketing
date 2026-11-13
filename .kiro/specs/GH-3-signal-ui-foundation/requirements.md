@@ -15,7 +15,7 @@ Integrate signal-ui-react-shared library via custom Metro resolver. Verify that 
 | Term               | Definition                                                                                                       |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | Metro Resolver     | Custom resolution logic in metro.config.js that redirects signal-ui-react-shared imports to library source files |
-| Signal UI          | Telkomsel's design system implemented as signal-ui-react-shared React Native component library                   |
+| Signal UI          | Design system implemented as signal-ui-react-shared React Native component library                               |
 | NativeWind         | Tailwind CSS implementation for React Native, v4 compatible with Expo SDK 58                                     |
 | Source Consumption | Importing directly from library's `src/` files instead of built `dist/` output                                   |
 | extraNodeModules   | Metro configuration that forces specific modules to resolve from app's node_modules                              |
