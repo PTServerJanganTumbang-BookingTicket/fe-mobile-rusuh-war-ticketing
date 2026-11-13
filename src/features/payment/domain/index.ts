@@ -7,6 +7,9 @@
  * @module features/payment/domain
  */
 
+// Payment port interface
+export type { PaymentPort } from "./payment.port";
+
 // Payment method types
 export type { AvailableBank, AvailableMethod } from "./payment-method.types";
 export {
