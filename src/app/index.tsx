@@ -1,27 +1,56 @@
-import { View, Text, Pressable } from "react-native";
-import { Link } from "expo-router";
+/**
+ * Home Route — Events Home
+ *
+ * The app opens directly on the events list (GH-16/GH-17 wiring).
+ * Uses the real HTTP repository when EXPO_PUBLIC_API_BASE_URL is set
+ * (deployed backend, contract v2.27); falls back to deterministic
+ * FakeEventRepository fixtures otherwise (local dev / CI without env).
+ * Pressing an enabled event card navigates to the queue waiting room.
+ */
+import React, { useCallback } from "react";
+import { StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  EventsHomeScreen,
+  FakeEventRepository,
+  HttpEventRepository,
+} from "@/features/events";
+import type { Event } from "@/features/events";
+
+// Expo inlines EXPO_PUBLIC_* env vars into the bundle at build time (SDK 49+)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+// Real repository when a backend URL is configured; fixtures otherwise
+const eventRepository = API_BASE_URL
+  ? new HttpEventRepository({ baseUrl: API_BASE_URL })
+  : new FakeEventRepository();
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  // Enabled event cards navigate to the queue waiting room (queue join flow).
+  // Disabled cards cannot be pressed (EventCard disables the CTA).
+  const handleEventPress = useCallback(
+    (event: Event) => {
+      router.push(`/queue/${event.id}`);
+    },
+    [router]
+  );
+
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-2xl font-bold text-gray-900">
-        Rusuh Booking Tiket
-      </Text>
-      <Text className="mt-2 text-gray-600">Welcome to the mobile app</Text>
-
-      {/* GH-16: Events Home Screen */}
-      <Link href="/events" asChild>
-        <Pressable className="mt-8 rounded-lg bg-blue-500 px-6 py-3">
-          <Text className="font-semibold text-white">Browse Events</Text>
-        </Pressable>
-      </Link>
-
-      {/* GH-3 Verification Infrastructure — Remove after merge */}
-      <Link href="/__signal-ui-verify" asChild>
-        <Pressable className="mt-4 rounded-lg bg-gray-200 px-6 py-3">
-          <Text className="font-semibold text-gray-700">Signal UI Verify</Text>
-        </Pressable>
-      </Link>
-    </View>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <EventsHomeScreen
+        repository={eventRepository}
+        onEventPress={handleEventPress}
+      />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+});

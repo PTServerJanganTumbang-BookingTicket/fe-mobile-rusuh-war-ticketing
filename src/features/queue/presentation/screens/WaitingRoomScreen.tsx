@@ -8,7 +8,8 @@
  */
 
 import React from "react";
-import { View, Text, SafeAreaView } from "react-native";
+import { View, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { QueueState } from "@/core/domain";
 import { ProgressBar } from "../components/ProgressBar";
 import {
@@ -87,14 +88,21 @@ export function WaitingRoomScreen({
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+      <SafeAreaView
+        className="flex-1 items-center justify-center bg-white"
+        edges={["bottom"]}
+      >
         <Text className="text-lg text-gray-500">Loading...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="waiting-room-screen">
+    <SafeAreaView
+      className="flex-1 bg-white"
+      edges={["bottom"]}
+      testID="waiting-room-screen"
+    >
       <View className="flex-1 px-6 py-8">
         {/* Header */}
         <View className="mb-8">

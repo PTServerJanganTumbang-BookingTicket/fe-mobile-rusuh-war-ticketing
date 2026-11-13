@@ -38,3 +38,27 @@
 - All queue (fake+real), auth, ticket selection, payment fake, e-ticket, events fake flows implemented and merged.
 - 704+ tests passing at GH-9 merge (8 DT skipped).
 - Signal UI Button NativeWind fix merged upstream (366 tests green).
+- 2026-11-13 (Cline, uncommitted): web-UI alignment pass — EventCard badge-overlay +
+  meta row + full-width CTA, EventsHomeScreen section header, brand-red loading/error
+  states + home CTA, QueuedView red position number (GH-55 intent). lint/typecheck/
+  test/boundary-check/expo-export pass. Awaiting review/commit by Rosyid.
+- 2026-11-13 (Cline, uncommitted): GH-17 real events adapter — contract v2.12→v2.27
+  (envelope `data` array, `location` `{venue, city}`), RealEventDataSource.getEvent
+  (GET /events/{id}), new HttpEventRepository, events.tsx wired via
+  `EXPO_PUBLIC_API_BASE_URL` (fallback Fake). 1013 tests green; all gates pass.
+  Verified live against deployed API (5 events, real Wikimedia images).
+- 2026-11-13 (Cline, uncommitted): home/queue/safearea wiring — `src/app/index.tsx`
+  IS the events home (`events.tsx` + `__signal-ui-verify.tsx` deleted); new route
+  `src/app/queue/[eventId].tsx` (guest deviceId + dummy captcha; real useRealQueue
+  via injection, SSE when available else /queue/me polling every 4s — Hermes has no
+  EventSource; fake scenario fallback without env var); `_layout.tsx` SafeAreaProvider
+  - SafeAreaView(top); `QueueHttpClient.getMe` optional `authContext` (deployed v2.27
+    requires X-Device-Id for guest /me); `QueueMeResponseDto` gained
+    ticket_no/now_serving (position = ticket_no − now_serving).
+- 2026-11-13 (Cline): "dev bundle contains no app source" RESOLVED as false alarm —
+  hand-built curl URL lacked `transform.routerRoot=src%2Fapp` (defaults to `app` →
+  empty router context module → 1630 all-node_modules bundle). Correct dev-bundle
+  test: curl the launchAsset URL from the Expo Go manifest
+  (`curl -H 'expo-platform: ios' http://localhost:8081/`). With the param: 2886-module
+  bundle with all app code; `expo export` .hbc also verified. metro.config.js (GH-3
+  resolver) NOT at fault; no code changes needed.

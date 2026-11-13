@@ -41,6 +41,12 @@ export interface QueueMeRequest {
   eventId: string;
   /** Queue token from join response */
   queueToken: string;
+  /**
+   * Optional auth context for header composition.
+   * Deployed contract v2.27 requires X-Device-Id for guest /queue/me calls;
+   * omitted for backward compatibility with existing callers.
+   */
+  authContext?: AuthContext;
 }
 
 /**

@@ -12,3 +12,12 @@ export type {
   QueueDataSource,
   QueueDataSourceFactory,
 } from "./useQueue";
+
+// GH-9 wiring: real-backend queue hook (SSE, with /queue/me polling fallback)
+export { useRealQueue } from "./useRealQueue";
+export type {
+  UseRealQueueConfig,
+  RealQueueDataSourcePort,
+  QueuePollSnapshot,
+  PollMeFn,
+} from "./useRealQueue";

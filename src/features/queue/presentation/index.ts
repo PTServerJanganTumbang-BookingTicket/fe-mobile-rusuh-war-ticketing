@@ -5,13 +5,17 @@
  */
 
 // Hooks
-export { useQueue } from "./hooks";
+export { useQueue, useRealQueue } from "./hooks";
 export type {
   UseQueueResult,
   UseQueueConfig,
   GrantPresentationInfo,
   QueueDataSource,
   QueueDataSourceFactory,
+  UseRealQueueConfig,
+  RealQueueDataSourcePort,
+  QueuePollSnapshot,
+  PollMeFn,
 } from "./hooks";
 
 // Components
