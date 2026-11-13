@@ -8,13 +8,8 @@
  */
 
 import React, { useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useBooking, type BookingDataSourceInterface } from "../hooks";
 import {
   CategoryCard,
@@ -92,7 +87,7 @@ export function TicketSelectionScreen({
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-gray-50" edges={["bottom"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text className="mt-4 text-gray-600">Loading tickets...</Text>
@@ -104,7 +99,7 @@ export function TicketSelectionScreen({
   // Error state
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-gray-50" edges={["bottom"]}>
         <View className="flex-1 items-center justify-center p-4">
           <Text className="text-red-600 text-lg font-semibold mb-2">Error</Text>
           <Text className="text-gray-700 text-center">{error.message}</Text>
@@ -116,7 +111,7 @@ export function TicketSelectionScreen({
   const orderLines = buildOrderLines(slots);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50" edges={["bottom"]}>
       <ScrollView className="flex-1 p-4">
         {/* Event info */}
         {event && (

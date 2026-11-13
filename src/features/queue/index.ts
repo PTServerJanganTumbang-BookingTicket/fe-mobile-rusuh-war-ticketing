@@ -39,6 +39,15 @@ export {
 export { FakeQueueDataSource } from "./data";
 export type { FakeQueueDataSourceConfig } from "./data";
 
+// GH-9 wiring: real queue runtime — the app layer constructs these and
+// injects them into useRealQueue (presentation cannot import data directly).
+export { RealQueueDataSource, QueueHttpClient } from "./data";
+export type {
+  RealQueueDataSourceConfig,
+  QueueHttpClientConfig,
+  QueueMeRequest,
+} from "./data";
+
 // Scenarios for testing and development
 export {
   SCENARIO_QUEUE_MOVING,
@@ -56,13 +65,17 @@ export {
 // ============================================================================
 
 // Hooks
-export { useQueue } from "./presentation";
+export { useQueue, useRealQueue } from "./presentation";
 export type {
   UseQueueResult,
   UseQueueConfig,
   GrantPresentationInfo,
   QueueDataSource,
   QueueDataSourceFactory,
+  UseRealQueueConfig,
+  RealQueueDataSourcePort,
+  QueuePollSnapshot,
+  PollMeFn,
 } from "./presentation";
 
 // Components

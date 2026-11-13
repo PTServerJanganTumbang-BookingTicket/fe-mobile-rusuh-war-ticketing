@@ -10,7 +10,8 @@ import {
   Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/core/presentation/components";
 
 // Prevent splash screen from auto-hiding
@@ -35,21 +36,37 @@ export default function RootLayout() {
   }
 
   return (
-    <View className="flex-1 bg-white">
-      <Header />
-      <View className="flex-1">
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="events"
-            options={{
-              title: "Events",
-              headerShown: true,
-            }}
-          />
-        </Stack>
-      </View>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      {/*
+        Safe-area scaffold (iOS + Android): the brand header sits below the
+        status bar / notch. Screens own their bottom-edge safe area.
+      */}
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Header />
+        <View style={styles.content}>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="queue/[eventId]"
+              options={{
+                title: "Waiting Room",
+                headerShown: true,
+              }}
+            />
+          </Stack>
+        </View>
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  content: {
+    flex: 1,
+  },
+});

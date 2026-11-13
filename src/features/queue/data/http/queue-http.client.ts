@@ -165,6 +165,13 @@ export class QueueHttpClient implements QueueHttpClientPort {
       createQueueToken(request.queueToken)
     );
 
+    // Deployed contract v2.27: guest /queue/me also requires X-Device-Id.
+    const authHeaders = request.authContext
+      ? isGuestAuth(request.authContext)
+        ? createGuestDeviceHeaders(request.authContext.deviceId)
+        : createAccountHeaders(request.authContext.accessToken)
+      : {};
+
     const { controller, timeoutId } = createTimeoutController(this.timeoutMs);
 
     try {
@@ -172,6 +179,7 @@ export class QueueHttpClient implements QueueHttpClientPort {
         method: "GET",
         headers: {
           ...queueHeaders,
+          ...authHeaders,
         },
         signal: controller.signal,
       });

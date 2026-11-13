@@ -54,6 +54,10 @@ export interface QueueMeResponseDto {
   position?: number;
   /** Rate per minute for ETA calculation */
   rate_per_min?: number;
+  /** Our ticket number (deployed contract v2.27; used to derive position) */
+  ticket_no?: number;
+  /** Ticket currently being served (deployed contract v2.27) */
+  now_serving?: number;
 }
 
 /**
