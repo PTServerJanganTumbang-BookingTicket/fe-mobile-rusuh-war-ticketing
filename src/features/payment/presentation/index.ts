@@ -15,9 +15,19 @@ export type {
 export { PaymentWebView } from "./PaymentWebView";
 
 // usePaymentWebView hook
-export type { UsePaymentWebViewResult } from "./usePaymentWebView";
-export { usePaymentWebView } from "./usePaymentWebView";
+export type {
+  UsePaymentWebViewResult,
+  PaymentWebViewAdapter,
+} from "./usePaymentWebView";
+export {
+  usePaymentWebView,
+  PaymentWebViewError,
+  PaymentErrorCode,
+} from "./usePaymentWebView";
 
 // useGopayHandler hook
-export type { UseGopayHandlerResult } from "./useGopayHandler";
+export type {
+  UseGopayHandlerResult,
+  GopayStatusAdapter,
+} from "./useGopayHandler";
 export { useGopayHandler, isGopayInstalled } from "./useGopayHandler";
