@@ -10,7 +10,7 @@ import { Text } from "@/core/presentation/components/signal";
 export const LoadingState: React.FC = () => {
   return (
     <View style={styles.container} accessibilityRole="progressbar">
-      <ActivityIndicator size="large" color="#3b82f6" />
+      <ActivityIndicator size="large" color="#EC1C2E" />
       <Text style={styles.text}>Loading events...</Text>
     </View>
   );
