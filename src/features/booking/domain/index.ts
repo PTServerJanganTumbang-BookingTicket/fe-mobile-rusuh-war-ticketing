@@ -6,7 +6,7 @@
  * @module features/booking/domain
  */
 
-// Types
+// Domain Types
 export type {
   BookingAccount,
   BookingCategory,
@@ -26,3 +26,28 @@ export {
   isSlotError,
   requiresQueueReturn,
 } from "./booking.types";
+
+// Selection utilities (T2)
+export {
+  canAddTicket,
+  canRemoveTicket,
+  totalSelectedCount,
+} from "./selection.utils";
+
+// Slot utilities (T3)
+export { buildSlots, parseSlotKey, updateSlotNikInput } from "./slot.utils";
+
+// API Types (T4)
+export type {
+  BookingRequest,
+  BookingResponse,
+  BookingResponseTicket,
+  BookingRules,
+  BookingSummary,
+  BookingTicketRequest,
+  NikValidationResponse,
+  PaymentTtl,
+  SavedNik,
+  TicketPageEvent,
+  TicketPageResponse,
+} from "./booking-api.types";

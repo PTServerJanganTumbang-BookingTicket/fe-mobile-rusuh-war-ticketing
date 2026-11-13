@@ -167,7 +167,9 @@ describe("Slot Utilities", () => {
     });
 
     it("throws on invalid index", () => {
-      expect(() => parseSlotKey("cat_vip_abc")).toThrow("Invalid slot key index");
+      expect(() => parseSlotKey("cat_vip_abc")).toThrow(
+        "Invalid slot key index"
+      );
     });
   });
 
@@ -277,7 +279,10 @@ describe("Slot Utilities", () => {
         },
       ];
 
-      const nikInput = { type: "account" as const, useAccountNik: true as const };
+      const nikInput = {
+        type: "account" as const,
+        useAccountNik: true as const,
+      };
       const result = updateSlotNikInput(slots, "cat_vip_0", nikInput);
 
       expect(result[0].nikInput).toEqual(nikInput);
