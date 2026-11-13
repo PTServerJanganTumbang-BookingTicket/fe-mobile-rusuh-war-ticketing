@@ -114,8 +114,8 @@ describe("EventCard", () => {
   describe("CTA button", () => {
     it("should be enabled when display.enabled is true", async () => {
       const result = await render(<EventCard event={baseEvent} />);
-      // Check the button text is "Join Queue" (enabled state)
-      expect(result.getByText("Join Queue")).toBeTruthy();
+      // Check the button text is "Join Queue →" (enabled state with arrow - GH-52)
+      expect(result.getByText("Join Queue →")).toBeTruthy();
     });
 
     it("should be disabled when display.enabled is false", async () => {
@@ -124,31 +124,31 @@ describe("EventCard", () => {
         display: { enabled: false },
       };
       const result = await render(<EventCard event={event} />);
-      // Check the button text is "Unavailable" (disabled state)
+      // Check the button text is "Unavailable" (disabled state, no arrow)
       expect(result.getByText("Unavailable")).toBeTruthy();
     });
 
-    it('should display "Join Queue" for OPEN with enabled=true', async () => {
+    it('should display "Join Queue →" with arrow for OPEN with enabled=true (GH-52)', async () => {
       const event: Event = {
         ...baseEvent,
         queueState: "OPEN",
         display: { enabled: true },
       };
       const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Join Queue")).toBeTruthy();
+      expect(result.getByText("Join Queue →")).toBeTruthy();
     });
 
-    it('should display "Notify Me" for FULL_BOOKED with enabled=true', async () => {
+    it('should display "Notify Me →" with arrow for FULL_BOOKED with enabled=true (GH-52)', async () => {
       const event: Event = {
         ...baseEvent,
         queueState: "FULL_BOOKED",
         display: { enabled: true },
       };
       const result = await render(<EventCard event={event} />);
-      expect(result.getByText("Notify Me")).toBeTruthy();
+      expect(result.getByText("Notify Me →")).toBeTruthy();
     });
 
-    it('should display "Unavailable" when disabled', async () => {
+    it('should display "Unavailable" without arrow when disabled (GH-52)', async () => {
       const event: Event = {
         ...baseEvent,
         display: { enabled: false },
@@ -163,7 +163,7 @@ describe("EventCard", () => {
         <EventCard event={baseEvent} onPress={onPress} />
       );
 
-      fireEvent.press(result.getByText("Join Queue"));
+      fireEvent.press(result.getByText("Join Queue →"));
       expect(onPress).toHaveBeenCalledTimes(1);
     });
 
@@ -209,8 +209,8 @@ describe("EventCard", () => {
         <EventCard event={event} onPress={onPress} />
       );
 
-      // CTA should be clickable
-      fireEvent.press(result.getByText("Notify Me"));
+      // CTA should be clickable (with arrow - GH-52)
+      fireEvent.press(result.getByText("Notify Me →"));
       expect(onPress).toHaveBeenCalledTimes(1);
     });
   });
