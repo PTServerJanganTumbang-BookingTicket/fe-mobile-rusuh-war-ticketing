@@ -44,3 +44,13 @@ export {
   isValidPaymentInstruction,
   isValidPaymentInitiation,
 } from "./payment-instruction.types";
+
+// Payment rules
+export {
+  TERMINAL_STATUSES,
+  MAX_PAYMENT_ATTEMPTS,
+  MIN_RETRY_REMAINING_MS,
+  isTerminalStatus,
+  canRetryPayment,
+  hasTimeForRetry,
+} from "./payment.rules";
