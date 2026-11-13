@@ -10,6 +10,8 @@ import {
   Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 import { useEffect } from "react";
+import { View } from "react-native";
+import { Header } from "@/core/presentation/components";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -33,18 +35,21 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="events"
-          options={{
-            title: "Events",
-            headerShown: true,
-          }}
-        />
-      </Stack>
+    <View className="flex-1 bg-white">
+      <Header />
+      <View className="flex-1">
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="events"
+            options={{
+              title: "Events",
+              headerShown: true,
+            }}
+          />
+        </Stack>
+      </View>
       <StatusBar style="auto" />
-    </>
+    </View>
   );
 }
