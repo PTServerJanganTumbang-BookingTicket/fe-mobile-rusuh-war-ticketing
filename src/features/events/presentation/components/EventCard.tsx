@@ -86,7 +86,8 @@ function getCTALabel(
     return "Unavailable";
   }
   // OPEN or FULL_BOOKED with enabled=true
-  return queueState === "FULL_BOOKED" ? "Notify Me" : "Join Queue";
+  const label = queueState === "FULL_BOOKED" ? "Notify Me" : "Join Queue";
+  return `${label} →`;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   ctaButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#EC1C2E",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
