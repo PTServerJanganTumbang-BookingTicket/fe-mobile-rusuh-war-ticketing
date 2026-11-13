@@ -18,11 +18,12 @@ describe("Real Events Integration", () => {
   let dataSource: RealEventDataSource;
   let validationErrors: Array<{ error: string; id: string }>;
 
+  // Contract v2.27: { data: [...], meta: {...} } — data is the array directly
   const createMockResponse = (
     items: unknown[],
     meta?: { total?: number; limit?: number; offset?: number }
   ) => ({
-    data: { items },
+    data: items,
     meta,
   });
 
@@ -34,7 +35,7 @@ describe("Real Events Integration", () => {
     id,
     name: `Event ${id}`,
     category: "LIVE MUSIC",
-    location: "Jakarta",
+    location: { venue: "Test Venue", city: "Jakarta" },
     date: "2026-12-25",
     image_url: "/images/test.webp",
     queue_state: queueState,
@@ -87,7 +88,7 @@ describe("Real Events Integration", () => {
           id: "evt_mapped",
           name: "Mapped Event",
           category: "LIVE MUSIC",
-          location: "Test Venue",
+          location: { venue: "Test Venue", city: "Jakarta" },
           date: "2026-12-25",
           image_url: "/images/mapped.webp",
           queue_state: "OPEN",
@@ -107,7 +108,7 @@ describe("Real Events Integration", () => {
         id: "evt_mapped",
         name: "Mapped Event",
         category: "LIVE MUSIC",
-        location: "Test Venue",
+        location: "Test Venue, Jakarta", // Combined from location { venue, city }
         date: "2026-12-25",
         imageUrl: "/images/mapped.webp", // Mapped from image_url
         queueState: "OPEN", // Mapped from queue_state

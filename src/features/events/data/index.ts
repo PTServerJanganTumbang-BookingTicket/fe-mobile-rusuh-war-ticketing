@@ -28,5 +28,9 @@ export type {
 // Repository implementations
 export { FakeEventRepository } from "./FakeEventRepository";
 
+// GH-17: Real HTTP repository (contract v2.27)
+export { HttpEventRepository } from "./HttpEventRepository";
+export type { HttpEventRepositoryConfig } from "./HttpEventRepository";
+
 // Fixtures (exported for testing)
 export { FAKE_EVENTS } from "./fixtures/events";

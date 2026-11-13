@@ -1,13 +1,16 @@
 /**
  * RealEventDataSource
  *
- * GH-17: HTTP adapter for GET /events endpoint.
+ * GH-17: HTTP adapter for GET /events and GET /events/{id} endpoints.
  * Implements real API integration while preserving repository port pattern.
  *
- * Contract: sjtrbt20261112.openapi.json
+ * Contract: v2.27 (deployed backend)
  * - No authentication required
  * - Query: limit (default 10, max 50), offset (default 0)
  * - NO filter parameter (backend ignores it)
+ * - Response envelope: `{ data: [...], meta: {...} }` — `data` is the array
+ *   directly (v2.12 `data.items` wrapper was removed)
+ * - Event `location` is an object `{ venue, city }`
  *
  * Error Handling (T4):
  * - 400 VALIDATION_ERROR: Bad request, user may retry
@@ -21,7 +24,7 @@
 
 import type { Event } from "../domain";
 import type { EventsResponseDTO, EventDTO } from "./dto";
-import { mapEventDTOs } from "./mappers";
+import { mapEventDTO, mapEventDTOs } from "./mappers";
 
 /**
  * API error types for error handling
@@ -146,50 +149,108 @@ export class RealEventDataSource {
       // Parse JSON response
       const json = await this.parseJsonResponse(response, url);
 
-      // Validate response envelope
+      // Validate response envelope (contract v2.27: data is the array)
       const responseDTO = this.validateResponseEnvelope(json, url);
 
       // Map DTOs to domain events (with validation)
       const events = mapEventDTOs(
-        responseDTO.data.items,
+        responseDTO.data,
         this.config.onValidationError
       );
 
       return events;
     } catch (error) {
-      // Re-throw ApiError as-is
-      if (error instanceof ApiError) {
-        throw error;
+      throw this.toApiError(error, url);
+    }
+  }
+
+  /**
+   * Fetch a single event from the real API (GET /events/{id})
+   * @param eventId - The event's unique identifier
+   * @returns Domain Event object
+   * @throws ApiError on failure
+   */
+  async getEvent(eventId: string): Promise<Event> {
+    const url = new URL(
+      `/events/${encodeURIComponent(eventId)}`,
+      this.config.baseUrl
+    ).toString();
+    const controller = this.createTimeoutController();
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        // NOTE: No auth headers - endpoint is public
+        headers: {
+          Accept: "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      // Handle HTTP errors
+      if (!response.ok) {
+        return this.handleHttpError(response, url);
       }
 
-      // Handle abort (timeout)
-      if (error instanceof Error && error.name === "AbortError") {
+      // Parse JSON response
+      const json = await this.parseJsonResponse(response, url);
+
+      // Validate detail envelope (contract v2.27: data is the event object)
+      const dto = this.validateDetailEnvelope(json, url);
+
+      // Map DTO to domain event (strict; invalid DTO is contract drift)
+      const result = mapEventDTO(dto);
+      if (!result.valid) {
         throw new ApiError(
-          "NETWORK_ERROR",
-          `Request timeout after ${this.config.timeoutMs}ms`,
-          undefined,
+          "CONTRACT_DRIFT",
+          result.error,
+          response.status,
           url
         );
       }
 
-      // Handle network errors
-      if (error instanceof TypeError) {
-        throw new ApiError(
-          "NETWORK_ERROR",
-          `Network error: ${error.message}`,
-          undefined,
-          url
-        );
-      }
+      return result.event;
+    } catch (error) {
+      throw this.toApiError(error, url);
+    }
+  }
 
-      // Unknown error
-      throw new ApiError(
-        "UNKNOWN",
-        error instanceof Error ? error.message : "Unknown error",
+  /**
+   * Wrap a caught error as an ApiError (shared by getEvents/getEvent)
+   */
+  private toApiError(error: unknown, url: string): ApiError {
+    // Re-throw ApiError as-is
+    if (error instanceof ApiError) {
+      return error;
+    }
+
+    // Handle abort (timeout)
+    if (error instanceof Error && error.name === "AbortError") {
+      return new ApiError(
+        "NETWORK_ERROR",
+        `Request timeout after ${this.config.timeoutMs}ms`,
         undefined,
         url
       );
     }
+
+    // Handle network errors
+    if (error instanceof TypeError) {
+      return new ApiError(
+        "NETWORK_ERROR",
+        `Network error: ${error.message}`,
+        undefined,
+        url
+      );
+    }
+
+    // Unknown error
+    return new ApiError(
+      "UNKNOWN",
+      error instanceof Error ? error.message : "Unknown error",
+      undefined,
+      url
+    );
   }
 
   /**
@@ -239,7 +300,8 @@ export class RealEventDataSource {
   }
 
   /**
-   * Validate response envelope structure
+   * Validate list response envelope structure (contract v2.27)
+   * `{ data: [...], meta: {...} }` — data is the event array directly
    */
   private validateResponseEnvelope(
     json: unknown,
@@ -256,26 +318,43 @@ export class RealEventDataSource {
 
     const obj = json as Record<string, unknown>;
 
-    if (!obj.data || typeof obj.data !== "object") {
+    if (!Array.isArray(obj.data)) {
       throw new ApiError(
         "PARSE_ERROR",
-        "Response missing 'data' field",
-        undefined,
-        url
-      );
-    }
-
-    const data = obj.data as Record<string, unknown>;
-
-    if (!Array.isArray(data.items)) {
-      throw new ApiError(
-        "PARSE_ERROR",
-        "Response 'data.items' is not an array",
+        "Response 'data' is not an array",
         undefined,
         url
       );
     }
 
     return json as EventsResponseDTO;
+  }
+
+  /**
+   * Validate detail response envelope structure (contract v2.27)
+   * `{ data: { ...event }, meta: {...} }` — data is the event object
+   */
+  private validateDetailEnvelope(json: unknown, url: string): EventDTO {
+    if (!json || typeof json !== "object") {
+      throw new ApiError(
+        "PARSE_ERROR",
+        "Response is not an object",
+        undefined,
+        url
+      );
+    }
+
+    const data = (json as Record<string, unknown>).data;
+
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new ApiError(
+        "PARSE_ERROR",
+        "Response 'data' is not an event object",
+        undefined,
+        url
+      );
+    }
+
+    return data as EventDTO;
   }
 }

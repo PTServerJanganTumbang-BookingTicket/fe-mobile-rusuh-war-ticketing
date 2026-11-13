@@ -32,6 +32,30 @@ const REQUIRED_FIELDS: (keyof EventDTO)[] = [
 ];
 
 /**
+ * Validates the location object (contract v2.27): must be an object
+ * with non-empty venue and city strings.
+ */
+function validateLocation(dto: EventDTO): string | null {
+  const location = dto.location as unknown;
+
+  if (typeof location !== "object" || location === null) {
+    return "Invalid location: expected object with venue and city";
+  }
+
+  const { venue, city } = location as { venue?: unknown; city?: unknown };
+
+  if (typeof venue !== "string" || venue.trim() === "") {
+    return "Invalid location: missing venue";
+  }
+
+  if (typeof city !== "string" || city.trim() === "") {
+    return "Invalid location: missing city";
+  }
+
+  return null;
+}
+
+/**
  * Validates that all required fields are present and non-null
  */
 function validateRequiredFields(dto: EventDTO): string | null {
@@ -71,6 +95,16 @@ export function mapEventDTO(dto: EventDTO): EventDTOValidationResult {
     };
   }
 
+  // Validate location object (contract v2.27)
+  const locationError = validateLocation(dto);
+  if (locationError) {
+    return {
+      valid: false,
+      error: locationError,
+      dto,
+    };
+  }
+
   // Validate queue_state - STRICT, no fallback
   if (!isValidQueueState(dto.queue_state)) {
     return {
@@ -85,7 +119,8 @@ export function mapEventDTO(dto: EventDTO): EventDTOValidationResult {
     id: dto.id,
     name: dto.name,
     category: dto.category,
-    location: dto.location,
+    // Contract v2.27: location is { venue, city }; domain uses a combined string
+    location: `${dto.location.venue}, ${dto.location.city}`,
     date: dto.date,
     imageUrl: dto.image_url, // snake_case → camelCase
     queueState: dto.queue_state as QueueState, // Validated above

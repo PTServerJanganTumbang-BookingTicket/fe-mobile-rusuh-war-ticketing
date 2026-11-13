@@ -28,12 +28,13 @@ export type {
 export { FakeEventRepository, FakeEventDataSource } from "./data";
 export type { FakeEventDataSourceConfig } from "./data";
 
-// GH-17: Real HTTP data source
-export { RealEventDataSource, ApiError } from "./data";
+// GH-17: Real HTTP data source + repository
+export { RealEventDataSource, ApiError, HttpEventRepository } from "./data";
 export type {
   RealEventDataSourceConfig,
   GetEventsParams,
   ApiErrorCode,
+  HttpEventRepositoryConfig,
 } from "./data";
 
 // Fixtures (for testing purposes)
