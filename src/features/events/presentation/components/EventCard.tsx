@@ -3,6 +3,9 @@
  *
  * GH-17: Feature-local event card displaying event summary information.
  * Evolved from GH-16: 5 queue states, no status badge.
+ * UI aligned with the web EventCard (Signal DS): status badge overlaid on the
+ * image, "location · category" meta row in brand red, full-width CTA, and an
+ * outline-style disabled CTA.
  *
  * Note: CTA button onPress is a placeholder — queue join is out of scope.
  */
@@ -30,17 +33,19 @@ const QUEUE_STATE_LABELS: Record<Event["queueState"], string> = {
 };
 
 /**
- * Maps QueueState to indicator colors
+ * Maps QueueState to status badge tones.
+ * Aligned with the web EventCard Badge (Signal DS status palette):
+ * SCHEDULED → info, OPEN → success, FULL_QUEUE/FULL_BOOKED → warning, CLOSED → error.
  */
-const QUEUE_STATE_COLORS: Record<
+const QUEUE_STATE_TONES: Record<
   Event["queueState"],
-  { indicator: string; text: string }
+  { background: string; text: string }
 > = {
-  SCHEDULED: { indicator: "#9ca3af", text: "#6b7280" }, // Gray
-  OPEN: { indicator: "#22c55e", text: "#16a34a" }, // Green
-  FULL_QUEUE: { indicator: "#f97316", text: "#ea580c" }, // Orange
-  FULL_BOOKED: { indicator: "#ef4444", text: "#dc2626" }, // Red
-  CLOSED: { indicator: "#6b7280", text: "#4b5563" }, // Dark gray
+  SCHEDULED: { background: "#e7f5fc", text: "#0050ae" }, // info
+  OPEN: { background: "#edfcf0", text: "#008e53" }, // success
+  FULL_QUEUE: { background: "#fef3d4", text: "#d9801f" }, // warning
+  FULL_BOOKED: { background: "#fef3d4", text: "#d9801f" }, // warning
+  CLOSED: { background: "#fdddd4", text: "#bc1d42" }, // error
 };
 
 export type EventCardProps = {
@@ -107,48 +112,48 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const imageSource =
     event.imageUrl && !imageError ? { uri: event.imageUrl } : PLACEHOLDER_IMAGE;
 
-  const queueStateStyle = QUEUE_STATE_COLORS[event.queueState];
+  const queueStateTone = QUEUE_STATE_TONES[event.queueState];
 
   return (
     <View style={styles.card}>
-      {/* Event Image */}
-      <Image
-        source={imageSource}
-        style={styles.image}
-        onError={handleImageError}
-        accessibilityLabel={`Image for ${event.name}`}
-      />
-
-      {/* Event Details */}
-      <View style={styles.content}>
-        {/* Category */}
-        <Text style={styles.category}>{event.category}</Text>
-
-        {/* Event Name */}
-        <Text style={styles.name}>{event.name}</Text>
-
-        {/* Location */}
-        <Text style={styles.location}>{event.location}</Text>
-
-        {/* Date */}
-        <Text style={styles.date}>{formatDate(event.date)}</Text>
-
-        {/* Queue State Indicator */}
-        <View style={styles.queueStateContainer}>
-          <View
-            style={[
-              styles.queueStateIndicator,
-              { backgroundColor: queueStateStyle.indicator },
-            ]}
-          />
+      {/* Event Image with status badge overlay (web-aligned) */}
+      <View style={styles.imageWrap}>
+        <Image
+          source={imageSource}
+          style={styles.image}
+          onError={handleImageError}
+          accessibilityLabel={`Image for ${event.name}`}
+        />
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: queueStateTone.background },
+          ]}
+        >
           <Text
-            style={[styles.queueStateText, { color: queueStateStyle.text }]}
+            style={[styles.statusBadgeText, { color: queueStateTone.text }]}
           >
             {QUEUE_STATE_LABELS[event.queueState]}
           </Text>
         </View>
+      </View>
 
-        {/* CTA Button */}
+      {/* Event Details */}
+      <View style={styles.content}>
+        {/* Meta row: location · category (web-aligned) */}
+        <View style={styles.metaRow}>
+          <Text style={styles.metaText}>{event.location}</Text>
+          <Text style={styles.metaSeparator}>·</Text>
+          <Text style={styles.metaText}>{event.category}</Text>
+        </View>
+
+        {/* Event Name */}
+        <Text style={styles.name}>{event.name}</Text>
+
+        {/* Date */}
+        <Text style={styles.date}>{formatDate(event.date)}</Text>
+
+        {/* CTA Button (full width, web-aligned) */}
         <Pressable
           style={[
             styles.ctaButton,
@@ -186,20 +191,47 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: "hidden",
   },
+  imageWrap: {
+    position: "relative",
+  },
   image: {
     width: "100%",
-    height: 180,
+    aspectRatio: 4 / 3,
     backgroundColor: "#e5e7eb",
+  },
+  statusBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   content: {
     padding: 16,
   },
-  category: {
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  metaText: {
     fontSize: 12,
-    color: "#6b7280",
+    fontWeight: "600",
+    color: "#EC1C2E",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 4,
+  },
+  metaSeparator: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#EC1C2E",
+    marginHorizontal: 4,
   },
   name: {
     fontSize: 18,
@@ -207,45 +239,27 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 8,
   },
-  location: {
-    fontSize: 14,
-    color: "#4b5563",
-    marginBottom: 4,
-  },
   date: {
     fontSize: 14,
     color: "#4b5563",
-    marginBottom: 12,
-  },
-  queueStateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: 16,
-  },
-  queueStateIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  queueStateText: {
-    fontSize: 13,
-    fontWeight: "500",
   },
   ctaButton: {
     backgroundColor: "#EC1C2E",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: "center",
   },
   ctaButtonDisabled: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   ctaButtonText: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+    textAlign: "center",
   },
   ctaButtonTextDisabled: {
     color: "#9ca3af",

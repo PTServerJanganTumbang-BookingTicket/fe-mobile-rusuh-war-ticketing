@@ -20,6 +20,8 @@ export interface QueuedViewProps {
 
 /**
  * Normal queued state view showing position and ETA.
+ * Aligned with the web QueueView: label above the position number, number in
+ * brand red (primary), then the estimated wait below.
  */
 export function QueuedView({
   position,
@@ -27,13 +29,13 @@ export function QueuedView({
 }: QueuedViewProps): React.ReactElement {
   return (
     <View className="items-center" testID="queued-view">
+      <Text className="text-base text-gray-500">Your position in queue</Text>
       <Text
-        className="text-4xl font-bold text-gray-900"
+        className="mt-1 text-4xl font-bold text-[#EC1C2E]"
         testID="queue-position"
       >
         #{position}
       </Text>
-      <Text className="mt-2 text-lg text-gray-600">Your position in queue</Text>
       <Text className="mt-4 text-base text-gray-500" testID="queue-eta">
         Estimated wait: {etaDisplay}
       </Text>
