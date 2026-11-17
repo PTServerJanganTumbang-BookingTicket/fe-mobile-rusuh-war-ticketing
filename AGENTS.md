@@ -6,9 +6,38 @@ Repository constitution for human and AI agents working on the Rusuh Booking Tik
 
 ## 1. Purpose and Scope
 
-This repository contains the Expo/React Native mobile app for Rusuh Booking Tiket. These instructions govern all work within this repository.
+This repository contains the Expo/React Native mobile app for Rusuh Booking Tiket. These instructions are the universal entry point for human and AI agents (Antigravity, Cline, Kiro/KiroCrew, Copilot, Hermes, and future tools) working within this repository.
 
 For parent workspace coordination, see the parent `AGENTS.md` in `SemestralAssessment/`.
+
+---
+
+## 1a. Source-of-Truth & Conflict Resolution
+
+| Knowledge Type               | Canonical Authority                                                                                               | Never Authoritative                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **IMPLEMENTATION**           | `src/**`, `__tests__/**`, `package.json`, `app.json`, `metro.config.js`                                           | `memory-bank/`, stale specs                               |
+| **ARCHITECTURE**             | `eslint.config.mjs` (`npm run boundary-check`) + `docs/ARCHITECTURE.md`                                           | `memory-bank/`, contradictory steering prose              |
+| **CONTRACTS**                | `docs/CONTRACT-BASELINE.md` + referenced external `../documentations/adr/` (preserve `Proposed`/`Pending` status) | AI session memory, test fixtures alone                    |
+| **FEATURE SPECIFICATIONS**   | `.kiro/specs/GH-<n>-<slug>/{requirements,design,tasks}.md`                                                        | `memory-bank/` summaries                                  |
+| **WORKFLOW / GOVERNANCE**    | `AGENTS.md` + `commitlint.config.js` + `.husky/*` + `.github/workflows/ci.yml`                                    | Outdated prose in `.kiro/steering/` or `.clinerules/`     |
+| **CURRENT EXECUTION STATUS** | Git history (`origin/main`) + GitHub Issues / PRs / Project #2                                                    | `memory-bank/activeContext.md`, `memory-bank/progress.md` |
+| **KNOWN TECHNICAL DEBT**     | `docs/KNOWN-ISSUES.md` (+ linked GitHub Issues)                                                                   | Unverified session notes                                  |
+| **HISTORICAL AI MEMORY**     | `memory-bank/` (frozen 2026-11-13, **non-authoritative**)                                                         | Provider session logs / chat history                      |
+
+**Conflict rules:**
+
+- Executable configuration (`eslint.config.mjs`, `commitlint.config.js`, `.github/workflows/ci.yml`) and implementation evidence override contradictory prose for actual/enforced behavior.
+- Approved contract/architecture intent (`docs/CONTRACT-BASELINE.md`, external ADRs, approved specs) establishes intended behavior when current product code contains a documented bug (`docs/KNOWN-ISSUES.md`).
+- Never resolve an unresolved contract or architecture decision by guessing; stop and escalate to Rosyid.
+- Provider session histories (`memory-bank/`, chat logs) are never authoritative for current status or contracts.
+
+---
+
+## 1b. Assessment Baseline
+
+- **Immutable assessment submission tag:** `assessment-2026h2-submission` → `99c7cb2065b5f85b2c0f8a8b974360e43425cc08`
+- Post-assessment documentation and development must preserve this baseline intact and must not rewrite or backdate historical artifacts.
 
 ---
 
@@ -35,14 +64,20 @@ src/
 
 ## 3. Layer Dependency Rules
 
-| Layer           | Can Import                                   | Cannot Import                                          |
-| --------------- | -------------------------------------------- | ------------------------------------------------------ |
-| `domain/`       | TypeScript only, `core/domain`               | React, React Native, external libs, data, presentation |
-| `data/`         | `domain`, `core/domain`, external libs       | React, presentation                                    |
-| `presentation/` | `domain`, `data`, React, React Native        | Other features (except via `index.ts`)                 |
-| `app/`          | Feature public APIs via `index.ts`, `core/*` | Feature internals directly                             |
+Executable authority: `eslint.config.mjs` (`npm run boundary-check`).
 
-**Cross-feature imports:** Only via `features/<x>/index.ts`. Never import from another feature's internal folders.
+| Layer           | Can Import                                                             | Cannot Import                                                     |
+| --------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `domain/`       | TypeScript only, `core/domain`                                         | React, React Native, external libs, `data/`, `presentation/`      |
+| `data/`         | own `domain`, `core/domain`, `core/data`, external libs                | React, `presentation/`                                            |
+| `presentation/` | own `domain`, `core/domain`, `core/presentation`, React, React Native  | **`data/` (own or core)**, other features (except via `index.ts`) |
+| `app/`          | Feature public APIs via `index.ts`, `core/domain`, `core/presentation` | Feature internals directly                                        |
+
+**Presentation DI rule:** Feature `presentation/` **MUST NOT import feature `data/`**. Data sources and repositories are instantiated in `src/app/` (the composition root) and injected into presentation hooks/screens.
+
+**Cross-feature imports:** Only via `features/<x>/index.ts` (shared ports belong in `core/domain`). Never import from another feature's internal folders.
+
+See `docs/ARCHITECTURE.md` for Signal UI, Metro/Expo/Hermes, and feature-wiring details.
 
 ---
 
@@ -60,18 +95,20 @@ Branches live max 1 day. Use feature flags for incomplete work.
 
 ### Commit Message Format
 
+Executable authority: `commitlint.config.js`.
+
 ```
 [GH-<n>][Rosyid] <type>(<scope>): <description>
 ```
 
-**Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
+**Allowed types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 
 **Examples:**
 
 - `[GH-3][Rosyid] feat(auth): add magic link request`
 - `[GH-2][Rosyid] chore(tooling): add ESLint configuration`
 
-Agents may add a `Co-authored-by:` trailer; the Actor stays Rosyid.
+Agents may add a `Co-authored-by:` trailer; the commitlint `[Rosyid]` actor token is required.
 
 ### Protected Branch
 
@@ -146,19 +183,17 @@ Any bypass of pre-commit, commit-msg, or pre-push hooks requires Rosyid's explic
 
 ---
 
-## 10. Steering File Index
+## 10. Documentation, Skills & Legacy Adapters
 
-Context files in `.kiro/steering/`:
+**Canonical documentation & portable skills:**
 
-| File                         | Inclusion            | Purpose                               |
-| ---------------------------- | -------------------- | ------------------------------------- |
-| `product.md`                 | always               | Product context                       |
-| `tech.md`                    | always               | Tech stack                            |
-| `structure.md`               | always               | Folder structure                      |
-| `git-workflow.md`            | always               | Branch/commit rules                   |
-| `spec-workflow.md`           | always               | Spec creation process                 |
-| `architecture-boundaries.md` | fileMatch `src/**`   | Layer rules (loads when editing src/) |
-| `testing-tdd.md`             | fileMatch test files | Testing patterns                      |
-| `release-train.md`           | manual               | Release process                       |
+- `docs/ARCHITECTURE.md` — Clean Architecture, Signal UI, Expo/Hermes constraints, feature wiring inventory
+- `docs/CONTRACT-BASELINE.md` — API contract baseline, post-baseline ADR index, and v2.27 observations
+- `docs/KNOWN-ISSUES.md` — verified technical debt, contract mismatches, and unwired gaps
+- `.agents/skills/` — portable provider-neutral workflows (`ticket-to-spec`, `release-train`)
+- `.kiro/specs/` — feature specifications (`requirements.md`, `design.md`, `tasks.md`)
 
-Steering files reference this document; they do not duplicate it.
+**Historical / legacy provider artifacts (non-authoritative on conflict):**
+
+- `memory-bank/` — frozen historical AI session memory (`2026-11-13`); **never** use for current ticket/PR status or canonical rules.
+- `.kiro/steering/` and `.clinerules/` — tool-specific rule adapters retained for Kiro/Cline compatibility; `AGENTS.md`, `eslint.config.mjs`, and `commitlint.config.js` take precedence if any wording diverges.

@@ -5,8 +5,7 @@ description: Rusuh mobile release and hotfix workflow - release train flow, hotf
 
 # Release Train (Rusuh mobile)
 
-On-demand skill (Cline equivalent of the Kiro manual steering file
-`.kiro/steering/release-train.md`). Activate when preparing a release.
+On-demand skill for preparing a release, cutting a release branch, or performing a hotfix.
 
 ## Release Flow
 

@@ -352,4 +352,28 @@ This baseline affects the following tickets:
 
 ---
 
+## 9. Post-Baseline Amendments and Implementation Observations
+
+> Added `2026-11-17` (GH-72) without altering the `2026-11-11` baseline above. Classifications distinguish contract authority from ADR proposals and deployed `v2.27` runtime observations. For mobile code mismatches against these contracts, see `docs/KNOWN-ISSUES.md`.
+
+### 9.1 External ADR Index (Sibling `../documentations/adr/`)
+
+| Document                                                                 | Classification         | Status in `documentations`        | Scope & Mobile Impact                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------ | ---------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `../documentations/adr/ADR-006-queue-admission-amendments.md`            | `ADR_PROPOSED`         | `Proposed` (awaiting team review) | Single grant writer (`admission-ctl`), pending grant, and **broadcast-only SSE** (`{nowServing, state, ratePerMin, serverTime}` camelCase; `grant` SSE event removed; client checks `/queue/me` when `nowServing >= ticket_no`; frontend computes ETA from `ratePerMin`).                               |
+| `../documentations/adr/ADR-007-mobile-webview-payment-handoff.md`        | `ADR_PROPOSED`         | `Proposed` (awaiting team review) | Resolves §5.1 WebView handoff questions via one-time `handoff_code` (`POST /payments/{booking_id}/handoff` → `#code=` → `POST /payments/handoff/exchange` → `X-Payment-Session` → `postMessage` signal → `GET /bookings/{booking_id}`). Implemented at module level by GH-14 (`src/features/payment/`). |
+| `../documentations/adr/ADR-008-mobile-magic-link-return-architecture.md` | `ADR_PENDING_DEFERRED` | `Pending (Deferred)` (2026-11-13) | Confirms `GET /auth/verify` requires `Cookie: magic_token={token}` (transport proven via spike). Marks LEG B (Web FE → Mobile FE return handoff) **`UNRESOLVED`** and deferred, leaving GH-43 and GH-7 auth presentation blocked.                                                                       |
+
+### 9.2 Verified Deployed Backend Observations (`v2.27`)
+
+- **`IMPLEMENTATION_OBSERVATION` — `GET /events`:** Response envelope is `{ data: EventDTO[], meta: {...} }` (`data` is the array directly without `items` wrapper); `location` is an object `{ venue, city }`; backend ignores `filter` query parameters (matches `src/features/events/data/RealEventDataSource.ts`).
+- **`IMPLEMENTATION_OBSERVATION` — Response & error envelope:** Deployed queue endpoints wrap success payloads in `{ data: {...}, meta: {...} }` and place `error_code` under `meta` (e.g., `400 DEVICE_ID_REQUIRED`). Compare `src/core/domain/api/envelope.types.ts` vs `docs/KNOWN-ISSUES.md` §1.
+- **`IMPLEMENTATION_OBSERVATION` — Queue join (`POST /events/{id}/queue/join`):** Deployed `data` returns `ticket_no`, `now_serving`, `position`, `queue_token`, `sse_url`, `event` (`joined_at` is absent from `data`; `server_time` is in `meta`). Repeat joins with the same `X-Device-Id` issue a new ticket rather than returning `rejoined` or `409`. Test environment (`evt_jkt_istora_nightfall`) accepts a dummy `captcha_token`.
+- **`IMPLEMENTATION_OBSERVATION` — Queue status (`GET /events/{id}/queue/me`):** Guest requests require both `X-Queue-Token` and `X-Device-Id`. `QUEUED` returns `{ data: { state, ticket_no, now_serving }, meta: { server_time } }`; `GRANTED` adds `grant_token` and `booking_expires_at`; `EXPIRED` returns `{ data: { state: "EXPIRED" } }`. `rate_per_min` is absent from `/queue/me` `data`.
+- **`IMPLEMENTATION_OBSERVATION` — Queue SSE (`GET .../stream`):** Authenticates via `X-Queue-Token` request header (query `?token=` returns `401`) and emits camelCase payloads (`nowServing`, `state`, `ratePerMin`, `serverTime`) matching `ADR-006` (`ADR_PROPOSED`). See `docs/KNOWN-ISSUES.md` §2–§3.
+- **`AUTHORITATIVE_CONTRACT` — Guest vs account grant headers:** Unchanged from §3 (`X-Grant-Token` + `X-Device-Id` for guests; `X-Grant-Token` + `Authorization: Bearer` for logged-in accounts).
+- **`UNRESOLVED` — Magic-link LEG B & guest queue recovery:** Mobile email-to-app magic-link return (`ADR-008`) remains unresolved; guest queue rejoin/deduplication across navigation remains unaligned between client persistence and backend join semantics (`docs/KNOWN-ISSUES.md` §7, §11).
+
+---
+
 _This document is the mobile-owned canonical interpretation of the API contract. For the full OpenAPI specification, refer to the Apidog exports._
