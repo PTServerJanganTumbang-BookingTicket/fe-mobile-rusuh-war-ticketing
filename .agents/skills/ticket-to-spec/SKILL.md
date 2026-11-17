@@ -5,8 +5,7 @@ description: Convert a GitHub issue into a full spec (requirements.md, design.md
 
 # Ticket-to-Spec Skill
 
-Convert a GitHub issue into a full spec (requirements, design, tasks).
-Cline mirror of `.kiro/skills/ticket-to-spec/` (same workflow, same output).
+Convert a GitHub issue into a full spec (requirements, design, tasks) in `.kiro/specs/`.
 
 ## When to Use
 
@@ -15,7 +14,8 @@ Activate this skill when starting work on a new GitHub issue that needs specific
 ## Workflow
 
 1. **Read the GitHub issue** — Fetch issue details via `gh issue view <n>`
-   (check verification checkboxes and current status).
+   (requires authenticated `gh` CLI; otherwise use human-provided issue details)
+   and check verification checkboxes and current status.
 2. **Create spec directory** — `.kiro/specs/GH-<n>-<slug>/`
 3. **Copy templates** — From `.kiro/specs/_templates/`
 4. **Fill requirements.md** — Extract requirements from issue, assign R-IDs
@@ -47,8 +47,9 @@ Activate this skill when starting work on a new GitHub issue that needs specific
 
 ## Spec format compliance
 
-Follow `.clinerules/spec-format.md` (exact template sections, `R<n>`/`T<n>`/`R<n>-AC<m>`
-IDs, correctness properties with `**Validates: Requirements X.Y**`, ADR format).
+Follow `.kiro/steering/kiro-spec-format.md` and `.kiro/specs/_templates/`
+(exact template sections, `R<n>`/`T<n>`/`R<n>-AC<m>` IDs, correctness properties
+with `**Validates: Requirements X.Y**`, ADR format).
 
 ## Commit
 
